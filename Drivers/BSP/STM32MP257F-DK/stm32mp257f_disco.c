@@ -436,7 +436,10 @@ int32_t  BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   }
 
   /* Enable the BUTTON clock*/
-  BUTTON_USER2_GPIO_CLK_ENABLE();
+  if (RESMGR_STATUS_ACCESS_OK == ResMgr_Request(RESMGR_RESOURCE_RIF_RCC, RESMGR_RCC_RESOURCE(92)))
+  {
+	  BUTTON_USER2_GPIO_CLK_ENABLE();
+  }
   gpio_init_structure.Pin = BUTTON_PIN [Button];
   gpio_init_structure.Pull = GPIO_NOPULL;
   gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -681,6 +684,15 @@ int32_t BSP_COM_Init(COM_TypeDef COM, COM_InitTypeDef *COM_Init)
 {
   int32_t ret = BSP_ERROR_NONE;
 
+  /*
+   * Suppose power supplies are present for all vddiox.
+   * Set bits to 1 so that the corresponding GPIOs can be used.
+   */
+  PWR->CR1 |= PWR_CR1_VDDIO3SV;
+  PWR->CR1 |= PWR_CR1_VDDIO4SV;
+  PWR->CR7 |= PWR_CR7_VDDIO2SV;
+  PWR->CR8 |= PWR_CR8_VDDIO1SV;
+
   if (COM >= COMn)
   {
     ret = BSP_ERROR_WRONG_PARAM;
@@ -690,6 +702,7 @@ int32_t BSP_COM_Init(COM_TypeDef COM, COM_InitTypeDef *COM_Init)
     /* Set the COM Instance */
     hcom_uart[COM].Instance = COM_USART[COM];
 
+#if defined (CORE_CM33)
     if (!IS_DEVELOPER_BOOT_MODE() && COM == COM_VCP_CM33)
     {
       if (ResMgr_Request(COM_CM33_RIF_RES_TYP_TX_PIN, COM_CM33_RIF_RES_NUM_TX_PIN) != RESMGR_STATUS_ACCESS_OK
@@ -699,6 +712,7 @@ int32_t BSP_COM_Init(COM_TypeDef COM, COM_InitTypeDef *COM_Init)
         return BSP_ERROR_MSP_FAILURE;
       }
     }
+#endif /* defined (CORE_CM33) */
 
     /* Init the UART Msp */
 #if (USE_HAL_UART_REGISTER_CALLBACKS == 0)
@@ -773,17 +787,8 @@ __weak HAL_StatusTypeDef MX_USART_Init(UART_HandleTypeDef *huart, MX_UART_InitTy
   huart->Init.StopBits     = (uint32_t)COM_Init->StopBits;
   huart->Init.HwFlowCtl    = (uint32_t)COM_Init->HwFlowCtl;
   huart->Init.OverSampling = UART_OVERSAMPLING_8;
-#if !defined (CORE_CM0PLUS)
   ErrorCode = HAL_UART_Init(huart);
-#else
-  /* Initialize the number of data to process during RX/TX ISR execution */
-  huart->NbTxDataToProcess = 1;
-  huart->NbRxDataToProcess = 1;
-  /* Initialize the UART State */
-  huart->gState = HAL_UART_STATE_READY;
-  huart->RxState = HAL_UART_STATE_READY;
-  ErrorCode = HAL_OK;
-#endif /* !defined (CORE_CM0PLUS) */
+
   return ErrorCode;
 }
 

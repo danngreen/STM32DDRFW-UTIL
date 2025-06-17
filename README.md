@@ -9,7 +9,7 @@ This document describes:
 
 ## 1 STM32DDRFW-UTIL Architecture and Design
 
-STM32DDRFW-UTIL v1.2.1 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP23XX and STM32MP25XX) series.
+STM32DDRFW-UTIL v1.3.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
 
 ### 1.1 Package overview
 
@@ -98,6 +98,7 @@ For STM32MP1 series:
 - ***DDR\_INTERACTIVE*** is mandatory to enable the DDR interactive mode
 - ***DDR\_TYPE\_X*** is also needed in order to determine the DDR type and its density, and to consider the corresponding setting template (for example, DDR\_TYPE\_DDR3\_4Gb will apply settings from stm32mp13xx-cubemx-ddr3-4Gb-template.h in STM32MP135C-DK project). See more details in *§1.2.3.3 Customization*
 - ***NO\_CACHE\_USE*** and ***NO\_MMU\_USE*** are set by default to ensure real DDR device access for first tests (this could be a very first step in a customer bring-up phase).
+- ***STM32MP157Cxx*** or ***STM32MP135Cxx***(for example) sets the SoC group and points to the related CMSIS definitions.
   
 For STM32MP2 series:
   
@@ -106,6 +107,10 @@ For STM32MP2 series:
 - ***DDR\_FREQ=X*** defines the DDR frequency expressed in MegaHertz (MHz)
 - ***STM32MP\_DDR\_DUAL\_AXI\_PORT=1*** enables both AXI ports
 - ***STM32MP\_DDR3\_TYPE=0/1*** ***STM32MP\_DDR4\_TYPE=0/1*** ***STM32MP\_LPDDR4\_TYPE=0/1*** determine the DDR type (only one possible value =1, others have to be =0), and consider the corresponding setting template. See more details in *§1.2.3.3 Customization*.
+- ***STM32MP215Fxx*** or ***STM32MP235Fxx*** or ***STM32MP257Cxx***(for example) sets the SoC group and points to the related CMSIS definitions.
+- ***STM32MP21xxxx*** or ***STM32MP23xxxx*** or ***STM32MP25xxxx*** sets the SoC family and points to the related resource manager definitions.
+
+When creating a new project, the best approach is to start from the nearest reference one, and adapt it with your own differences. This is described just below.
 
 ##### 1.2.3.3 Customization
 
@@ -339,11 +344,11 @@ This section describes how to compile and launch these projects in STM32CubeIDE.
 
 	- <span style="color: red;">Only nominal procedures described below must be followed.</span>
 
-- <span style="color: red;">**STM32MP2 projects** with up to 4GB size support in aarch64 build environment (local toolchain) with STM32 V2.2 header.</span>
+- <span style="color: red;">**STM32MP2 projects** with up to 4GB size support in aarch64 build environment (local toolchain) with STM32 V2.2 header (and V2.3 for STM32MP21).</span>
 
 	- <span style="color: red;">Extra procedures <span style="color: blue;">(marked in blue below)</span> must complete nominal ones.</span>
 
-The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 1.17 release</span>.
+The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 1.19 release</span>.
 
 #### 2.2.1 Import the project in STM32CubeIDE
 
@@ -364,7 +369,7 @@ To import a DDR Tool project in STM32CubeIDE, follow these steps:
 - <span style="color: blue;">Windows: **[gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf.tar.xz?revision=09ff6958-8d84-4694-a204-6413888aee5d&rev=a0b1b0bb25cc4bc79ca28c38fce37085&hash=DF8FBD5125F75ACF8FB826795DDC58E7DF330106)**</span>
 - <span style="color: blue;">Linux:</span>
 	- <span style="color: blue;">Ubuntu 20.04: **[gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz?rev=981d8f7e91864070a466d852589598e2&hash=8D5397D4E41C99A96989ED813E8E95F0)**</span>
-	- <span style="color: blue;">Ubuntu 22.04: **[arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-aarch64-none-elf.zip](https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-aarch64-none-elf.zip)**</span>
+	- <span style="color: blue;">Ubuntu 22.04: **[arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz)**</span>
 	- <span style="color: blue;">Whatever the Ubuntu release please install libncursesw5 package (**sudo apt-get install libncursesw5**)</span>
 
 <span style="color: blue;">Download the aarch64 toolchain and unzip it on your PC. Here again, please install it not so far from root directory, because there can be some long path issues with unexpected behaviors.</span>

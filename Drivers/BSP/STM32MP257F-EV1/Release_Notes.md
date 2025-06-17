@@ -27,7 +27,28 @@ From project settings points of view, user has only to add the necessary driverâ
 # Update History
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section0" checked aria-hidden="true">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true">
+<label for="collapse-section1" aria-hidden="true">__V1.2.0 / 06-June-2024__</label>
+<div>			
+
+## Main Changes
+
+- refactor(MP2-EV): ErrorHandler externally defined in the Example files.
+- fix(BSPEV1): add a default ramp delay for regulators
+- fix(BSPEV1): reorder DDR4 power supply sequence
+- refactor(BSPEV1): Factorize regulator enabling and disabling
+- fix(BSPEV1): wrong description of PMIC LDO3 regulator
+
+
+## Notes
+
+stm32mp257f_eval_conf_template.h file must be copied in user application as >stm32mp257f_eval_conf.h with optional configuration update
+
+</div>
+:::
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section0" aria-hidden="true">
 <label for="collapse-section0" aria-hidden="true">__V1.0.0 / 31-May-2024__</label>
 <div>			
 

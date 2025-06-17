@@ -436,7 +436,12 @@ int32_t  BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode)
   }
 
   /* Enable the BUTTON clock*/
-  BUTTON_USER2_GPIO_CLK_ENABLE();
+
+  /* Enable GPIOC clock */
+  if (RESMGR_STATUS_ACCESS_OK == ResMgr_Request(RESMGR_RESOURCE_RIF_RCC, RESMGR_RCC_RESOURCE(92)))
+  {
+	  BUTTON_USER2_GPIO_CLK_ENABLE();
+  }
   gpio_init_structure.Pin = BUTTON_PIN [Button];
   gpio_init_structure.Pull = GPIO_NOPULL;
   gpio_init_structure.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -680,6 +685,15 @@ __weak void BSP_PB_Callback(Button_TypeDef Button)
 int32_t BSP_COM_Init(COM_TypeDef COM, COM_InitTypeDef *COM_Init)
 {
   int32_t ret = BSP_ERROR_NONE;
+
+  /*
+   * Suppose power supplies are present for all vddiox.
+   * Set bits to 1 so that the corresponding GPIOs can be used.
+   */
+  PWR->CR1 |= PWR_CR1_VDDIO3SV;
+  PWR->CR1 |= PWR_CR1_VDDIO4SV;
+  PWR->CR7 |= PWR_CR7_VDDIO2SV;
+  PWR->CR8 |= PWR_CR8_VDDIO1SV;
 
   if (COM >= COMn)
   {

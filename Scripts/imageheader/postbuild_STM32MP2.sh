@@ -1,4 +1,4 @@
-#!/bin/bash -
+#!/bin/bash
 # ******************************************************************************
 # @file      postbuild_STM32MP2.sh
 # @author    MCD Application Team
@@ -183,21 +183,34 @@ fi
 
 if [ "${core}" == "CA35" ] ; then
   # Add EL3_Launcher for A35 application
-  el3_launcher_entry_point=$(${readelf_path} -h ${local_script_path}/EL3_Launcher/STM32MP2_el3_launcher.elf | grep "Entry point address" | sed 's/.*0x\([^ ]*\)/0x\1/')
+  if [ "$header_version" == "2.3" ]; then
+    el3_launcher_base_name='STM32MP2_el3_launcher_MP21'
+  else
+    el3_launcher_base_name='STM32MP2_el3_launcher'
+  fi
+  el3_launcher_entry_point=$(${readelf_path} -h ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.elf | grep "Entry point address" | sed 's/.*0x\([^ ]*\)/0x\1/')
+  
   # elf_entry_point is in format 0x%x so Reformat to 0x%08X and process entry-point address
   formatted_el3_ep_addr=$(printf "0x%08x" $((el3_launcher_entry_point)))
   el3_launcher_ep_addr_for_image="0e${formatted_el3_ep_addr:4:6}"
 
-  el3_launcher_end_addr=$(${readelf_path} -s ${local_script_path}/EL3_Launcher/STM32MP2_el3_launcher.elf | grep "EL3_STACK_BASE" | sed 's/.*: \([^ ]*\) .*/0x\1/')
+  el3_launcher_end_addr=$(${readelf_path} -s ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.elf | grep "EL3_STACK_BASE" | sed 's/.*: \([^ ]*\) .*/0x\1/')
+
   formatted_el3_launcher_end_addr=$(printf "0x%08x" $((el3_launcher_end_addr)))
   formatted_el3_launcher_end_addr="0x0e${formatted_el3_launcher_end_addr:4:6}"
   el3_launcher_end_offset=$((formatted_el3_launcher_end_addr-0x0E000000))
 
-  cp ${local_script_path}/EL3_Launcher/STM32MP2_el3_launcher.bin ${elf_file_basename}_pad_el3lnch.bin
-  el3_launcher_size=$(stat -c%s ${local_script_path}/EL3_Launcher/STM32MP2_el3_launcher.bin)
-  el3_launcher_padding_size=$((el3_launcher_end_offset-el3_launcher_size-0x2600))
-
-  no_el3_launcher_padding_size=$((el3_launcher_end_offset-0x2600))
+  cp ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.bin ${elf_file_basename}_pad_el3lnch.bin
+  
+  el3_launcher_size=$(stat -c%s ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.bin)
+  if [ "$header_version" == "2.3" ]; then
+      el3_launcher_padding_size=$((el3_launcher_end_offset-el3_launcher_size-0x2640))
+      no_el3_launcher_padding_size=$((el3_launcher_end_offset-0x2640))
+  else
+      el3_launcher_padding_size=$((el3_launcher_end_offset-el3_launcher_size-0x2600))
+      no_el3_launcher_padding_size=$((el3_launcher_end_offset-0x2600))
+  fi
+  
 
   if [ ${debug} -ne 0 ] ; then
     echo "<D> el3_launcher_entry_point        =<$el3_launcher_entry_point>"
@@ -208,6 +221,7 @@ if [ "${core}" == "CA35" ] ; then
     echo "<D> el3_launcher_size               =<$el3_launcher_size>"
     echo "<D> el3_launcher_padding_size       =<$el3_launcher_padding_size>"
   fi
+
   dd if=/dev/zero bs=1 count=${el3_launcher_padding_size} >>${elf_file_basename}_pad_el3lnch.bin 2>/dev/null
   cat ${elf_file_basename}_pad_el3lnch.bin ${elf_file_basename}_pb.bin >${elf_file_basename}_pb_el3lnch.bin
   # Add padding in place of el3 launcher for no_el3lnch image
@@ -222,7 +236,13 @@ if [ "${core}" == "CA35" ] ; then
   if [ ${debug} -ne 0 ] ; then
     echo "<D> ret                         =<$ret>"
   fi
-  command="${cmd} ${imgtool} ${elf_file_basename}.bin ${elf_file_basename}_nopad_no_el3lnch.stm32 -bt ${binary_type} -ep ${ep_addr_for_image} -hv ${header_version} -la 0x0E002600"
+
+  if [ "$header_version" == "2.3" ]; then
+      command="${cmd} ${imgtool} ${elf_file_basename}.bin ${elf_file_basename}_nopad_no_el3lnch.stm32 -bt ${binary_type} -ep ${ep_addr_for_image} -hv ${header_version} -la 0x0E002640"
+  else
+      command="${cmd} ${imgtool} ${elf_file_basename}.bin ${elf_file_basename}_nopad_no_el3lnch.stm32 -bt ${binary_type} -ep ${ep_addr_for_image} -hv ${header_version} -la 0x0E002600"
+  fi
+  
   ${command}
   command="${cmd} ${imgtool} ${elf_file_basename}_pb_no_el3lnch.bin ${elf_file_basename}_no_el3lnch.stm32 -bt ${binary_type} -ep ${ep_addr_for_image} -hv ${header_version}"
   ${command}

@@ -19,47 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "res_mgr.h"
 #if !defined(USE_DEVELOPMENT_MODE)
-GPIO_TypeDef *GPIO_base_addrs[] =
-{
-#if !defined (CORE_CM0PLUS)
-#if defined (GPIOA)
-  GPIOA,
-#endif /* GPIOA */
-#if defined (GPIOB)
-  GPIOB,
-#endif /* GPIOB */
-#if defined (GPIOC)
-  GPIOC,
-#endif /* GPIOC */
-#if defined (GPIOD)
-  GPIOD,
-#endif /* GPIOD */
-#if defined (GPIOE)
-  GPIOE,
-#endif /* GPIOE */
-#if defined (GPIOF)
-  GPIOF,
-#endif /* GPIOF */
-#if defined (GPIOG)
-  GPIOG,
-#endif /* GPIOG */
-#if defined (GPIOH)
-  GPIOH,
-#endif /* GPIOH */
-#if defined (GPIOI)
-  GPIOI,
-#endif /* GPIOI */
-#if defined (GPIOJ)
-  GPIOJ,
-#endif /* GPIOJ */
-#if defined (GPIOK)
-  GPIOK,
-#endif /* GPIOK */
-#endif /*CORE_CM0PLUS*/
-#if defined (GPIOZ)
-  GPIOZ,
-#endif /* GPIOZ */
-};
+
 
 #if defined(CORE_CA35)
 uint32_t scid = RESMGR_CIDCFGR_SCID1;
@@ -76,6 +36,120 @@ uint32_t semcid = RESMGR_CIDCFGR_SEMWLC3;
 
 #define CPUSCID(scid) (scid >> RESMGR_CIDCFGR_SCID_Pos)
 #define CPUSEMCID(semcid) (semcid >> RESMGR_CIDCFGR_SEMWL_Pos)
+
+static GPIO_TypeDef* GetGPIOBaseAddr(ResMgr_Res_Type_t res_type)
+{
+
+  GPIO_TypeDef *gpioBaseAddr = NULL;
+
+  switch(res_type)
+  {
+#ifdef GPIOA
+    case RESMGR_RESOURCE_RIF_GPIOA:
+    {
+      gpioBaseAddr = GPIOA;
+      break;
+    }
+#endif /* GPIOA */
+
+#ifdef GPIOB
+    case RESMGR_RESOURCE_RIF_GPIOB:
+    {
+      gpioBaseAddr = GPIOB;
+      break;
+    }
+#endif /* GPIOB */
+
+#ifdef GPIOC
+    case RESMGR_RESOURCE_RIF_GPIOC:
+    {
+      gpioBaseAddr = GPIOC;
+      break;
+    }
+#endif /* GPIOC */
+
+#ifdef GPIOD
+    case RESMGR_RESOURCE_RIF_GPIOD:
+    {
+      gpioBaseAddr = GPIOD;
+      break;
+    }
+#endif /* GPIOD */
+
+#ifdef GPIOE
+    case RESMGR_RESOURCE_RIF_GPIOE:
+    {
+      gpioBaseAddr = GPIOE;
+      break;
+    }
+#endif /* GPIOE */
+
+#ifdef GPIOF
+    case RESMGR_RESOURCE_RIF_GPIOF:
+    {
+      gpioBaseAddr = GPIOF;
+      break;
+    }
+#endif /* GPIOF */
+
+#ifdef GPIOG
+    case RESMGR_RESOURCE_RIF_GPIOG:
+    {
+      gpioBaseAddr = GPIOG;
+      break;
+    }
+#endif /* GPIOG */
+
+#ifdef GPIOH
+    case RESMGR_RESOURCE_RIF_GPIOH:
+    {
+      gpioBaseAddr = GPIOH;
+      break;
+    }
+#endif /* GPIOH */
+
+#ifdef GPIOI
+    case RESMGR_RESOURCE_RIF_GPIOI:
+    {
+      gpioBaseAddr = GPIOI;
+      break;
+    }
+#endif /* GPIOI */
+
+#ifdef GPIOJ
+    case RESMGR_RESOURCE_RIF_GPIOJ:
+    {
+      gpioBaseAddr = GPIOJ;
+      break;
+    }
+#endif /* GPIOJ */
+
+#ifdef GPIOK
+    case RESMGR_RESOURCE_RIF_GPIOK:
+    {
+      gpioBaseAddr = GPIOK;
+      break;
+    }
+#endif /* GPIOK */
+
+#ifdef GPIOZ
+    case RESMGR_RESOURCE_RIF_GPIOZ:
+    {
+      gpioBaseAddr = GPIOZ;
+      break;
+    }
+#endif /* GPIOZ */
+
+    default:
+    {
+      gpioBaseAddr = NULL;
+    }
+
+  }
+
+  return gpioBaseAddr;
+
+}
 
 static ResMgr_Status_t GetBaseAddrRIF_rifsc(ResMgr_data_info_t *rif_info, uint8_t res_num)
 {
@@ -113,9 +187,10 @@ static ResMgr_Status_t GetBaseAddrRIF_RCC(ResMgr_data_info_t *rif_info, uint8_t 
   return ret;
 }
 #endif
+
 static ResMgr_Status_t GetBaseAddrRIF_GPIO(ResMgr_data_info_t *rif_info, uint8_t res_num)
 {
-  GPIO_TypeDef *GPIO_base = GPIO_base_addrs[rif_info->res_type - RESMGR_RESOURCE_RIF_GPIOA];
+  GPIO_TypeDef *GPIO_base = GetGPIOBaseAddr(rif_info->res_type);
   ResMgr_Status_t  ret =  RESMGR_STATUS_ERROR_NONE;	
   /*Check the Parameter*/
   if(!IS_RESMGR_GPIO_RSC(res_num))
@@ -273,19 +348,43 @@ static ResMgr_Status_t GetBaseAddrRIF(ResMgr_data_info_t *rif_info, uint8_t res_
     case RESMGR_RESOURCE_RIF_RCC:
       ret = GetBaseAddrRIF_RCC(rif_info, res_num);
       break;
+#if defined (GPIOA)
     case RESMGR_RESOURCE_RIF_GPIOA:
+#endif /* GPIOA */
+#if defined (GPIOB)
     case RESMGR_RESOURCE_RIF_GPIOB:
+#endif /* GPIOB */
+#if defined (GPIOC)
     case RESMGR_RESOURCE_RIF_GPIOC:
+#endif /* GPIOC */
+#if defined (GPIOD)
     case RESMGR_RESOURCE_RIF_GPIOD:
+#endif /* GPIOD */
+#if defined (GPIOE)
     case RESMGR_RESOURCE_RIF_GPIOE:
+#endif /* GPIOE */
+#if defined (GPIOF)
     case RESMGR_RESOURCE_RIF_GPIOF:
+#endif /* GPIOF */
+#if defined (GPIOG)
     case RESMGR_RESOURCE_RIF_GPIOG:
+#endif /* GPIOG */
+#if defined (GPIOH)
     case RESMGR_RESOURCE_RIF_GPIOH:
+#endif /* GPIOH */
+#if defined (GPIOI)
     case RESMGR_RESOURCE_RIF_GPIOI:
+#endif /* GPIOI */
+#if defined (GPIOJ)
     case RESMGR_RESOURCE_RIF_GPIOJ:
+#endif /* GPIOJ */
+#if defined (GPIOK)
     case RESMGR_RESOURCE_RIF_GPIOK:
-#endif
+#endif /* GPIOK */
+#endif /* !defined (CORE_CM0PLUS) */
+#if defined (GPIOZ)
     case RESMGR_RESOURCE_RIF_GPIOZ:
+#endif /* GPIOZ */
       ret = GetBaseAddrRIF_GPIO(rif_info, res_num);
       break;
 #if !defined (CORE_CM0PLUS)
@@ -463,7 +562,7 @@ ResMgr_Status_t ResMgr_GPIO_Request(ResMgr_Res_Type_t res_type, uint16_t pin)
 
 	temp_pin = pin;
 
-	if(res_type >= RESMGR_RESOURCE_RIF_GPIOA && res_type <= RESMGR_RESOURCE_RIF_GPIOZ)
+	if( NULL != GetGPIOBaseAddr(res_type) )
 	{
 		while(temp_pin)
 		{
@@ -519,7 +618,7 @@ ResMgr_Status_t ResMgr_GPIO_Release(ResMgr_Res_Type_t res_type, uint16_t pin)
 
 	temp_pin = pin;
 
-	if(res_type >= RESMGR_RESOURCE_RIF_GPIOA && res_type <= RESMGR_RESOURCE_RIF_GPIOZ)
+	if( NULL != GetGPIOBaseAddr(res_type) )
 	{
 	    while(temp_pin)
 		{

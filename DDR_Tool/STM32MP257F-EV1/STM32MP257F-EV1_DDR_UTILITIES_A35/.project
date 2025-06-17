@@ -58,12 +58,12 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Common_MP2/Src/main.c</locationURI>
 		</link>
 		<link>
-			<name>User/stm32mp1xx_hal_msp.c</name>
+			<name>User/stm32mp2xx_hal_msp.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Common_MP2/Src/stm32mp2xx_hal_msp.c</locationURI>
 		</link>
 		<link>
-			<name>User/stm32mp1xx_it.c</name>
+			<name>User/stm32mp2xx_it.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Common_MP2/Src/stm32mp2xx_it.c</locationURI>
 		</link>
@@ -313,7 +313,7 @@
 			<locationURI>PARENT-3-PROJECT_LOC/Drivers/BSP/STM32MP257F-EV1/stm32mp2xx_power.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/resourcesmanager/res_mgr.c.c</name>
+			<name>Drivers/resourcesmanager/res_mgr.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/Scripts/resourcesmanager/res_mgr.c</locationURI>
 		</link>

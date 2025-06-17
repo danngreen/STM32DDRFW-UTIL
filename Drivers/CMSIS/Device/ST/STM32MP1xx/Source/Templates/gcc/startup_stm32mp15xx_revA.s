@@ -126,7 +126,6 @@ Infinite_Loop:
 ******************************************************************************/
    .section .isr_vector,"a",%progbits
   .type g_pfnVectors, %object
-  .size g_pfnVectors, .-g_pfnVectors
 
 
 g_pfnVectors:
@@ -298,6 +297,9 @@ g_pfnVectors:
   .word  TEMP_IRQHandler                   // Temperature sensor interrupt
   .word  HOLD_CORE_IRQHandler              // Hold core flag
   .word  WAKEUP_PIN_IRQHandler             // Interrupt for all 6 wake-up pins
+
+  .size g_pfnVectors, .-g_pfnVectors
+
 /*******************************************************************************
 *
 * Provide weak aliases for each Exception handler to the Default_Handler.

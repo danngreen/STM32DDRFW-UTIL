@@ -1461,7 +1461,7 @@ HAL_StatusTypeDef HAL_PWR_ReleaseResourceSemaphore(uint16_t Item)
 {
   uint32_t position = 0x00;
   uint32_t iocurrent;
-  __IO uint32_t *regaddr;
+  __IO uintptr_t *regaddr;
 
   /* Check the parameters */
   assert_param(IS_WIO_RESOURCE(Item));
@@ -1474,7 +1474,7 @@ HAL_StatusTypeDef HAL_PWR_ReleaseResourceSemaphore(uint16_t Item)
     if (iocurrent != 0U)
     {
       /* Release Semaphore*/
-      regaddr = &PWR->WIO1SEMCR + (WIO_CID_CFG_ADD_OFFSET * position);
+      regaddr = (uintptr_t *)&PWR->WIO1SEMCR + (WIO_CID_CFG_ADD_OFFSET * position);
       *regaddr = ~PWR_WIO1SEMCR_SEM_MUTEX;
     }
     position++;

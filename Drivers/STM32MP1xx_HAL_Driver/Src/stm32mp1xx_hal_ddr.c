@@ -1138,12 +1138,19 @@ static HAL_StatusTypeDef ddrphy_idone_wait(void)
     }
   } while (((pgsr & DDRPHYC_PGSR_IDONE) == 0U) && (error == 0U));
 
+  if (error != 0)
+  {
+        return HAL_ERROR;
+  }
+
   return HAL_OK;
 }
 
 static HAL_StatusTypeDef HAL_DDR_PHY_Init(uint32_t pir)
 {
   uint32_t pir_init = pir | DDRPHYC_PIR_INIT;
+  uint32_t zq0sr0;
+  HAL_StatusTypeDef ret;
 
   WRITE_REG(DDRPHYC->PIR, pir_init);
 
@@ -1151,7 +1158,20 @@ static HAL_StatusTypeDef HAL_DDR_PHY_Init(uint32_t pir)
   ddr_delay_us(DDR_DELAY_PHY_INIT_US);
 
   /* Wait DRAM initialization and Gate Training Evaluation complete */
-  return ddrphy_idone_wait();
+  ret = ddrphy_idone_wait();
+  if (ret != HAL_OK)
+  {
+    return ret;
+  }
+
+  zq0sr0 = READ_REG(DDRPHYC->ZQ0SR0);
+  if (((zq0sr0 & DDRPHYC_ZQ0SR0_ZDONE) != DDRPHYC_ZQ0SR0_ZDONE) ||
+      ((zq0sr0 & DDRPHYC_ZQ0SR0_ZERR) == DDRPHYC_ZQ0SR0_ZERR))
+  {
+        return HAL_ERROR;
+  }
+
+  return HAL_OK;
 }
 
 static HAL_StatusTypeDef self_refresh_zcal(uint32_t zdata)
@@ -1429,11 +1449,11 @@ static int32_t wait_refresh_update_done_ack(void)
   rfshctl3 = READ_REG(DDRCTRL->RFSHCTL3);
   if ((rfshctl3 & refresh_update_level) == refresh_update_level)
   {
-    SET_BIT(DDRCTRL->RFSHCTL3, refresh_update_level);
+    CLEAR_BIT(DDRCTRL->RFSHCTL3, refresh_update_level);
   }
   else
   {
-    CLEAR_BIT(DDRCTRL->RFSHCTL3, refresh_update_level);
+    SET_BIT(DDRCTRL->RFSHCTL3, refresh_update_level);
     refresh_update_level = 0U;
   }
 
@@ -1447,7 +1467,7 @@ static int32_t wait_refresh_update_done_ack(void)
     {
       return -1;
     }
-  } while ((rfshctl3 & DDRCTRL_RFSHCTL3_REFRESH_UPDATE_LEVEL) !=
+  } while ((rfshctl3 & DDRCTRL_RFSHCTL3_REFRESH_UPDATE_LEVEL) ==
            refresh_update_level);
 
   return 0;
@@ -2309,41 +2329,44 @@ HAL_StatusTypeDef HAL_DDR_Init(DDR_InitTypeDef *iddr)
   }
 
 
-  if ((static_ddr_config.c_reg.MSTR & DDRCTRL_MSTR_DDR3) != 0U)
+  if (!iddr->self_refresh)
   {
-    iret = HAL_DDR_MspInit(STM32MP_DDR3);
-  }
-  else if ((static_ddr_config.c_reg.MSTR & DDRCTRL_MSTR_LPDDR2) != 0U)
-  {
-    if (bus_width == 32U)
+    if ((static_ddr_config.c_reg.MSTR & DDRCTRL_MSTR_DDR3) != 0U)
     {
-      iret = HAL_DDR_MspInit(STM32MP_LPDDR2_32);
+      iret = HAL_DDR_MspInit(STM32MP_DDR3);
+    }
+    else if ((static_ddr_config.c_reg.MSTR & DDRCTRL_MSTR_LPDDR2) != 0U)
+    {
+      if (bus_width == 32U)
+      {
+        iret = HAL_DDR_MspInit(STM32MP_LPDDR2_32);
+      }
+      else
+      {
+        iret = HAL_DDR_MspInit(STM32MP_LPDDR2_16);
+      }
+    }
+    else if ((static_ddr_config.c_reg.MSTR & DDRCTRL_MSTR_LPDDR3) != 0U)
+    {
+      if (bus_width == 32U)
+      {
+        iret = HAL_DDR_MspInit(STM32MP_LPDDR3_32);
+      }
+      else
+      {
+        iret = HAL_DDR_MspInit(STM32MP_LPDDR3_16);
+      }
     }
     else
     {
-      iret = HAL_DDR_MspInit(STM32MP_LPDDR2_16);
+      /*  Unsupported DDR type */
+      return HAL_ERROR;
     }
-  }
-  else if ((static_ddr_config.c_reg.MSTR & DDRCTRL_MSTR_LPDDR3) != 0U)
-  {
-    if (bus_width == 32U)
-    {
-      iret = HAL_DDR_MspInit(STM32MP_LPDDR3_32);
-    }
-    else
-    {
-      iret = HAL_DDR_MspInit(STM32MP_LPDDR3_16);
-    }
-  }
-  else
-  {
-    /*  Unsupported DDR type */
-    return HAL_ERROR;
-  }
 
-  if (iret != 0)
-  {
-    return HAL_ERROR;
+    if (iret != 0)
+    {
+      return HAL_ERROR;
+    }
   }
 
   /* Check DDR PHY pads retention */
@@ -2523,18 +2546,16 @@ start:
   }
 
   ret = HAL_DDR_PHY_Init(pir);
-  if (ret != HAL_OK)
-  {
-    return ret;
-  }
 
   if (iddr->self_refresh)
   {
+    /* Re-init PHY with ZQ calibration */
     ret = self_refresh_zcal(iddr->zdata);
-    if (ret != HAL_OK)
-    {
-      return ret;
-    }
+  }
+
+  if (ret != HAL_OK)
+  {
+    return ret;
   }
 
   /*
@@ -2733,6 +2754,10 @@ HAL_StatusTypeDef HAL_DDR_SR_Entry(uint32_t *zq0cr0_zdata)
   {
     *zq0cr0_zdata = READ_REG(DDRPHYC->ZQ0CR0) & DDRPHYC_ZQ0CR0_ZDATA_Msk;
   }
+
+#ifndef DDR_INTERACTIVE
+  save_ddr_training_area();
+#endif /* !DDR_INTERACTIVE */
 
   /* Put DDR in Self-Refresh */
   if (ddr_sw_self_refresh_in() != 0)

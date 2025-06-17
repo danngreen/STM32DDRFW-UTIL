@@ -1,5 +1,5 @@
 ---
-pagetitle: Release Notes for STM32MP25xx CMSIS
+pagetitle: Release Notes for STM32MP2xxx CMSIS
 lang: en
 header-includes: <link rel="icon" type="image/x-icon" href="_htmresc/favicon.png" />
 ---
@@ -8,17 +8,17 @@ header-includes: <link rel="icon" type="image/x-icon" href="_htmresc/favicon.png
 ::: {.col-sm-12 .col-lg-4}
 
 <center>
-# Release Notes for <mark>\ STM32MP25xx CMSIS </mark>
-Copyright &copy; 2023\ STMicroelectronics\
+# Release Notes for <mark>\ STM32MP2xxx CMSIS </mark>
+Copyright &copy; 2025\ STMicroelectronics\
     
 [![ST logo](_htmresc/st_logo_2020.png)](https://www.st.com){.logo}
 </center>
 
 # Purpose
 		
-This driver provides the CMSIS device for the STM32MP25xx products. This covers
+This driver provides the CMSIS device for the STM32MP2xxx products. This covers
 
-- STM32MP257Axx ,STM32MP257Cxx
+- STM32MP257xxx ,**STM32MP215xxx**, STM32MP235xxx
 
 This driver is composed of the descriptions of the registers under “Include” directory.
 
@@ -34,13 +34,36 @@ Various template file are provided to easily build an application. They can be a
 # __Update History__
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section0" checked aria-hidden="true">
-<label for="collapse-section0" checked aria-hidden="true">__V1.0.0.RC4 / 17-May-2024__</label>
+<input type="checkbox" id="collapse-section2" checked aria-hidden="true">
+<label for="collapse-section2" checked aria-hidden="true">__V1.2.0 / 30-May-2025__</label>
 <div>
 
 ## Main Changes
 
-This is a **v1.0.0.RC4 Release** for STM32MP25xx CMSIS
+This release is the **Maintenance DV of Bit and registers definition** for STM32MP2xxx
+
+## Contents
+- Added support of STM32MP21xx
+
+## Known Limitations
+
+None
+
+## Dependencies
+
+None
+
+</div>
+:::
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section1" aria-hidden="true">
+<label for="collapse-section1" checked aria-hidden="true">__V1.1.0 / 23-Nov-2024__</label>
+<div>
+
+## Main Changes
+
+This is a **v1.1.0 Release** for STM32MP25xx CMSIS
 
 ## Contents
 
@@ -56,13 +79,13 @@ None
 :::
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section1" aria-hidden="true">
-<label for="collapse-section1" checked aria-hidden="true">__V0.3.0.rc5 / 13-Oct-2023__</label>
+<input type="checkbox" id="collapse-section0" aria-hidden="true">
+<label for="collapse-section0" checked aria-hidden="true">__V1.0.0 / 13-June-2024__</label>
 <div>
 
 ## Main Changes
 
-This is a **Beta RC5 Release** for STM32MP25xx CMSIS
+This is a **Mass Market release** for STM32MP2xxx CMSIS
 
 ## Contents
 

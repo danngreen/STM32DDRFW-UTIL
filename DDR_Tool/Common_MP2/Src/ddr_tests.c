@@ -372,7 +372,7 @@ uint32_t DDR_Test_AddressBus(unsigned long size_in, unsigned long addr_in)
     dflt_size = DDR_MEM_SIZE;
   }
 
-  if (get_buf_size(size_in, &size, dflt_size, 4) != 0)
+  if (get_buf_size(size_in, &size, dflt_size, sizeof(unsigned long)) != 0)
   {
     return 1;
   }
@@ -485,7 +485,7 @@ uint32_t DDR_Test_MemDevice(unsigned long size_in, unsigned long addr_in)
   unsigned long pattern;
   unsigned long antipattern;
 
-  if (get_buf_size(size_in, &size, 4 * 1024, 4) != 0)
+  if (get_buf_size(size_in, &size, 4 * 1024, sizeof(unsigned long)) != 0)
   {
     return 1;
   }
@@ -572,7 +572,7 @@ uint32_t DDR_Test_SimultaneousSwitchingOutput(unsigned long size_in,
   unsigned long offset;
   unsigned long data = 0;
 
-  if (get_buf_size(size_in, &size, 4 * 1024, 4) != 0)
+  if (get_buf_size(size_in, &size, 4 * 1024, sizeof(unsigned long)) != 0)
   {
     return 1;
   }
@@ -1280,7 +1280,7 @@ uint32_t DDR_Test_BlockSequential(unsigned long size, unsigned long loop_in,
   unsigned long i;
   int ret;
 
-  if (get_buf_size(size, &bufsize, 4 * 1024, 4) != 0)
+  if (get_buf_size(size, &bufsize, 4 * 1024, sizeof(unsigned long)) != 0)
   {
     return 1;
   }
@@ -1565,7 +1565,7 @@ uint32_t DDR_Test_WalkingZeroes(unsigned long size, unsigned long loop_in,
   int ret;
   int depth;
 
-  if (get_buf_size(size, &bufsize, 4 * 1024, 4) != 0)
+  if (get_buf_size(size, &bufsize, 4 * 1024, sizeof(unsigned long)) != 0)
   {
     return 1;
   }
@@ -1640,7 +1640,7 @@ uint32_t DDR_Test_WalkingOnes(unsigned long size, unsigned long loop_in,
   int ret;
   int depth;
 
-  if (get_buf_size(size, &bufsize, 4 * 1024, 4) != 0)
+  if (get_buf_size(size, &bufsize, 4 * 1024, sizeof(unsigned long)) != 0)
   {
     return 1;
   }

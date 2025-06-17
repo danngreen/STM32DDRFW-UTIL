@@ -111,18 +111,42 @@ typedef enum
   RESMGR_RESOURCE_RIFSC,
   RESMGR_RESOURCE_RIF_PWR_WIO,
   RESMGR_RESOURCE_RIF_RCC,
+#if defined (GPIOA)
   RESMGR_RESOURCE_RIF_GPIOA,
+#endif /* GPIOA */
+#if defined (GPIOB)
   RESMGR_RESOURCE_RIF_GPIOB,
+#endif /* GPIOB */
+#if defined (GPIOC)
   RESMGR_RESOURCE_RIF_GPIOC,
+#endif /* GPIOC */
+#if defined (GPIOD)
   RESMGR_RESOURCE_RIF_GPIOD,
+#endif /* GPIOD */
+#if defined (GPIOE)
   RESMGR_RESOURCE_RIF_GPIOE,
+#endif /* GPIOE */
+#if defined (GPIOF)
   RESMGR_RESOURCE_RIF_GPIOF,
+#endif /* GPIOF */
+#if defined (GPIOG)
   RESMGR_RESOURCE_RIF_GPIOG,
+#endif /* GPIOG */
+#if defined (GPIOH)
   RESMGR_RESOURCE_RIF_GPIOH,
+#endif /* GPIOH */
+#if defined (GPIOI)
   RESMGR_RESOURCE_RIF_GPIOI,
+#endif /* GPIOI */
+#if defined (GPIOJ)
   RESMGR_RESOURCE_RIF_GPIOJ,
+#endif /* GPIOJ */
+#if defined (GPIOK)
   RESMGR_RESOURCE_RIF_GPIOK,
+#endif /* GPIOK */
+#if defined (GPIOZ)
   RESMGR_RESOURCE_RIF_GPIOZ,
+#endif /* GPIOZ */
   RESMGR_RESOURCE_RIF_FMC,
   RESMGR_RESOURCE_RIF_PWR,
   RESMGR_RESOURCE_RIF_RTC,
@@ -214,7 +238,7 @@ typedef enum
   */
 #define IS_RESMGR_RES_TYPE(__TYPE__)     ((ResMgr_Res_Type_t )(__TYPE__) < (ResMgr_Res_Type_t) RESMGR_RESOURCE_MAX)
 
-#define IS_RESMGR_RIFSC_RSC(__NUM__)     ((__NUM__) <= RESMGR_RIFSC_RIFSC_ID_MAX)
+#define IS_RESMGR_RIFSC_RSC(__NUM__)     ((__NUM__) <= RESMGR_RIFSC_ID_MAX)
 
 #define IS_RESMGR_PWR_RSC(__NUM__)       ((__NUM__) < RESMGR_RIFSC_PWR_RSC_NB)
 

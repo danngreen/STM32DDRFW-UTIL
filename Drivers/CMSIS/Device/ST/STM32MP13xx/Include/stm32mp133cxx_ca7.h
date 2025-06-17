@@ -102,11 +102,11 @@
    DMA1_Stream5_IRQn                = 48,     /*!< DMA1 Stream 5 global Interrupt                                       */
    DMA1_Stream6_IRQn                = 49,     /*!< DMA1 Stream 6 global Interrupt                                       */
    ADC1_IRQn                        = 50,     /*!< ADC1 global Interrupts                                               */
-   ADC2_IRQn                        = 51,     /*!< ADC1 global Interrupts                                               */
+   ADC2_IRQn                        = 51,     /*!< ADC2 global Interrupts                                               */
    FDCAN1_IT0_IRQn                  = 52,     /*!< FDCAN1 Interrupt line 0                                              */
-   RESERVED_53                      = 53,     /*!< reserved                                                             */
+   FDCAN2_IT0_IRQn                  = 53,     /*!< FDCAN2 Interrupt line 0                                              */
    FDCAN1_IT1_IRQn                  = 54,     /*!< FDCAN1 Interrupt line 1                                              */
-   RESERVED_55                      = 55,     /*!< reserved                                                             */
+   FDCAN2_IT1_IRQn                  = 55,     /*!< FDCAN2 Interrupt line 1                                              */
    EXTI5_IRQn                       = 56,     /*!< External Line[9:5] Interrupts                                        */
    TIM1_BRK_IRQn                    = 57,     /*!< TIM1 Break interrupt                                                 */
    TIM1_UP_IRQn                     = 58,     /*!< TIM1 Update Interrupt                                                */
@@ -158,8 +158,8 @@
    USART6_IRQn                      = 104,    /*!< USART6 global interrupt                                              */
    I2C3_EV_IRQn                     = 105,    /*!< I2C3 event interrupt                                                 */
    I2C3_ER_IRQn                     = 106,    /*!< I2C3 error interrupt                                                 */
-   USBH_PORT1_IRQn                  = 107,    /*!< USB Host port 1  Interrupt                                           */
-   USBH_PORT2_IRQn                  = 108,    /*!< USB Host port 2  Interrupt                                           */
+   USBH_OHCI_IRQn                   = 107,    /*!< USB OHCI Host Interrupt                                              */
+   USBH_EHCI_IRQn                   = 108,    /*!< USB EHCI Host Interrupt                                              */
    EXTI12_IRQn                      = 109,    /*!< EXTI Line 76 Interrupts                                              */
    EXTI13_IRQn                      = 110,    /*!< EXTI Line 77 Interrupts                                              */
    RESERVED_111                     = 111,    /*!< reserved                                                             */
@@ -1361,6 +1361,7 @@ typedef struct
   __IO uint32_t SIDR;        /*!< SAES Size ID Register,                        Address offset: 0x3FC */
 } SAES_TypeDef;
 
+ 
  /**
   * @brief Public Key Accelerator (PKA)
   */
@@ -1416,11 +1417,13 @@ typedef struct
   __IO uint32_t PLL;             /*!< USBPHYC PLL control register   Address offset: 0x000 */
        uint32_t RESERVED0;       /*!< Reserved                       Address offset: 0x004 */
   __IO uint32_t MISC;            /*!< USBPHYC misc control register  Address offset: 0x008 */
-       uint32_t RESERVED1[64];   /*!< Reserved                       Address offset: 0x00C-0x108 */
+       uint32_t RESERVED1[63];   /*!< Reserved                       Address offset: 0x00C- 0x104 */
+  __IO uint32_t MONITOR1;        /*!< USBPHYC MONITOR1 register      Address offset: 0x108 */
   __IO uint32_t TUNE1;           /*!< USBPHYC PHY 1 TUNE register    Address offset: 0x10C */
-       uint32_t RESERVED2[63];   /*!< Reserved                       Address offset: 0x110-0x208 */
+       uint32_t RESERVED2[62];   /*!< Reserved                       Address offset: 0x110- 0x204 */
+  __IO uint32_t MONITOR2;        /*!< USBPHYC MONITOR2 register      Address offset: 0x208 */
   __IO uint32_t TUNE2;           /*!< USBPHYC PHY 2 TUNE register    Address offset: 0x20C */
-       uint32_t RESERVED3[891];  /*!< Reserved                       Address offset: 0x210-0xFF8 */
+       uint32_t RESERVED3[891];  /*!< Reserved                       Address offset: 0x210- 0xFF8 */
   __IO uint32_t VERR;            /*!< USBPHYC VERSION register       Address offset: 0xFFC */
 } USBPHYC_GlobalTypeDef;
 
@@ -2506,22 +2509,58 @@ typedef struct
 } USB_OTG_HostChannelTypeDef;
 
 /**
-  * @brief USB_EHCI Capability Registers
+  * @brief USBH_EHCI HOST Registers
   */
 typedef struct
 {
-  __IO uint32_t HCCAPBASE;        /*!< Capability Register register,              Address offset: 0x00 */
-  __IO uint32_t HCSPARAMS;        /*!< Structural Parameter register              Address offset: 0x04 */
-  __IO uint32_t HCCPARAMS;        /*!< Capability Parameter register,             Address offset: 0x08 */
-       uint32_t RESERVED;         /*!< USB Command register,                      Address offset: 0x0C */
-  __IO uint32_t USBCMD;           /*!< USB Command register,                      Address offset: 0x10 */
-  __IO uint32_t USBSTS;           /*!< USB Status register,                       Address offset: 0x14 */
-  __IO uint32_t USBINTR;          /*!< USB Interrupt Enable register,             Address offset: 0x18 */
-  __IO uint32_t FRINDEX;          /*!< USB Frame Index register ,                 Address offset: 0x1C */
-  __IO uint32_t CTRLDSSEGMENT;    /*!< 4G Segment Selector register,              Address offset: 0x20 */
-  __IO uint32_t PERIODICLISTBASE; /*!< Periodic Frame List Base Address register, Address offset: 0x24 */
-  __IO uint32_t ASYNCLISTADDR;    /*!< Asynchronous List Address register,        Address offset: 0x28 */
-} USB_EHCI_CapabilityTypeDef;
+  __IO uint32_t HCICAPLENGTH;     /*!< Capability Register,                       Address offset: 0x00 */
+  __IO uint32_t HCSPARAMS;        /*!< Structural Parameter Register              Address offset: 0x04 */
+  __IO uint32_t HCCPARAMS;        /*!< Capability Parameter Register,             Address offset: 0x08 */
+       uint32_t RESERVED1;        /*!< RESERVED1,                                 Address offset: 0x0C */
+  __IO uint32_t USBCMD;           /*!< USB Command Register,                      Address offset: 0x10 */
+  __IO uint32_t USBSTS;           /*!< USB Status Register,                       Address offset: 0x14 */
+  __IO uint32_t USBINTR;          /*!< USB Interrupt Enable Register,             Address offset: 0x18 */
+  __IO uint32_t FRINDEX;          /*!< USB Frame Index Register ,                 Address offset: 0x1C */
+  __IO uint32_t CTRLDSSEGMENT;    /*!< Control Data Structure Selector Register,  Address offset: 0x20 */
+  __IO uint32_t PERIODICLISTBASE; /*!< Periodic Frame List Base Address Register, Address offset: 0x24 */
+  __IO uint32_t ASYNCLISTADDR;    /*!< Asynchronous List Address Register,        Address offset: 0x28 */
+       uint32_t RESERVED2[9];     /*!< RESERVED2,                                 Address offset: 0x2C - 0x48 */
+  __IO uint32_t CONFIGFLAG;       /*!< Configure Flag Register,                   Address offset: 0x50 */
+  __IO uint32_t PORTSC[2];        /*!< Port Status and Control Register,          Address offset: 0x54 */
+       uint32_t RESERVED3[14];    /*!< RESERVED3,                                 Address offset: 0x58 - 0x90 */
+  __IO uint32_t INSNREG[7];       /*!< Implementation Register,                   Address offset: 0x94 - 0xAC */
+} USBH_EHCI_TypeDef;
+
+typedef struct
+{
+  /* Control and status registers */
+  __IO uint32_t HCREVISION;          /*!< Host Controller Revision,               Address offset: 0x00 */
+  __IO uint32_t HCCONTROL;           /*!< Host Controller Control,                Address offset: 0x04 */
+  __IO uint32_t HCCOMMANDSTATUS;     /*!< Host Controller Command Status,         Address offset: 0x08 */
+  __IO uint32_t HCINTERRUPTSTATUS;   /*!< Host Controller Interrupt Status,       Address offset: 0x0C */
+  __IO uint32_t HCINTERRUPTENABLE;   /*!< Host Controller Interrupt Enable,       Address offset: 0x10 */
+  __IO uint32_t HCINTERRUPTDISABLE;  /*!< Host Controller Interrupt Disable,      Address offset: 0x14 */
+  /* Memory pointers */
+  __IO uint32_t HCHCCA;              /*!< Host Controller Communication Area,     Address offset: 0x18 */
+  __IO uint32_t HCPERIODCURRENTED;   /*!< Host Controller Period Current ED,      Address offset: 0x1C */
+  __IO uint32_t HCCONTROLHEADED;     /*!< Host Controller Control Head ED,        Address offset: 0x20 */
+  __IO uint32_t HCCONTROLCURRENTED;  /*!< Host Controller Control Current ED,     Address offset: 0x24 */
+  __IO uint32_t HCBULKHEADED;        /*!< Host Controller Bulk Head ED,           Address offset: 0x28 */
+  __IO uint32_t HCBULKCURRENTED;     /*!< Host Controller Bulk Current ED,        Address offset: 0x2C */
+  __IO uint32_t HCDONEHEAD;          /*!< Host Controller Done Head,              Address offset: 0x30 */
+  /* Frame counters */
+  __IO uint32_t HCFMINTERVAL;        /*!< Host Controller Frame Interval,         Address offset: 0x34 */
+  __IO uint32_t HCFMREMAINING;       /*!< Host Controller Frame Remaining,        Address offset: 0x38 */
+  __IO uint32_t HCFMNUMBER;          /*!< Host Controller Frame Number,           Address offset: 0x3C */
+  __IO uint32_t PERIODICSTART;       /*!< Host Controller Periodic Start,         Address offset: 0x40 */
+  __IO uint32_t HCLSTHRESHOLD;       /*!< Host Controller Low-Speed Threshold,    Address offset: 0x44 */
+  /* Root hub ports */
+  __IO uint32_t HCRHDESCRIPTORA;     /*!< Host Controller Root Hub Descriptor A,  Address offset: 0x48 */
+  __IO uint32_t HCRHDESCRIPTORB;     /*!< Host Controller Root Hub Descriptor B,  Address offset: 0x4C */
+  __IO uint32_t HCRHSTATUS;          /*!< Host Controller Root Hub Status,        Address offset: 0x50 */
+  __IO uint32_t HCRHPORTSTATUS[2];   /*!< Host Controller Root Hub Port Status,   Address offset: 0x54 - 0x58 */
+  __IO uint32_t INSNREG[2];          /*!< Implementation Register,                Address offset: 0x98 - 0x9C */
+} USBH_OHCI_TypeDef;
 
 /**
   * @}
@@ -2609,6 +2648,8 @@ typedef struct
 #define DMA1_BASE             (AHB2_PERIPH_BASE + 0x0000UL)
 #define DMA2_BASE             (AHB2_PERIPH_BASE + 0x1000UL)
 #define DMAMUX1_BASE          (AHB2_PERIPH_BASE + 0x2000UL)
+#define ADC1_BASE             (AHB2_PERIPH_BASE + 0x3000UL)
+#define ADC1_COMMON_BASE      (AHB2_PERIPH_BASE + 0x3300UL)
 #define ADC2_BASE             (AHB2_PERIPH_BASE + 0x4000UL)
 #define ADC2_COMMON_BASE      (AHB2_PERIPH_BASE + 0x4300UL)
 #define DMA3_BASE             (AHB2_PERIPH_BASE + 0x5000UL)
@@ -2687,8 +2728,8 @@ typedef struct
 #define CRC1_BASE               (AHB6_PERIPH_BASE + 0x9000UL)
 #define ETH_BASE                (AHB6_PERIPH_BASE + 0xA000UL)
 #define ETH_MAC_BASE            (ETH_BASE)
-#define USB1HSFSP2_BASE         (AHB6_PERIPH_BASE + 0xC000UL)
-#define USB1HSFSP1_BASE         (AHB6_PERIPH_BASE + 0xD000UL)
+#define USBH_OHCI_BASE          (AHB6_PERIPH_BASE + 0xC000UL)
+#define USBH_EHCI_BASE          (AHB6_PERIPH_BASE + 0xD000UL)
 #define ETH2_BASE               (AHB6_PERIPH_BASE + 0xE000UL)
 
 /*!< MPU_APB4 */
@@ -2932,7 +2973,9 @@ typedef struct
 #define GPIOH               ((GPIO_TypeDef *) GPIOH_BASE)
 #define GPIOI               ((GPIO_TypeDef *) GPIOI_BASE)
 
+#define ADC1                ((ADC_TypeDef *) ADC1_BASE)
 #define ADC2                ((ADC_TypeDef *) ADC2_BASE)
+#define ADC1_COMMON        ((ADC_Common_TypeDef *) ADC1_COMMON_BASE)
 #define ADC2_COMMON        ((ADC_Common_TypeDef *) ADC2_COMMON_BASE)
 
 #define CRYP1               ((CRYP_TypeDef *) CRYP1_BASE)
@@ -3079,8 +3122,9 @@ typedef struct
 #define MDMA_Channel30      ((MDMA_Channel_TypeDef *)MDMA_Channel30_BASE)
 #define MDMA_Channel31      ((MDMA_Channel_TypeDef *)MDMA_Channel31_BASE)
 
-#define USB_OTG_HS            ((USB_OTG_GlobalTypeDef *) USBOTG_BASE)
-#define USB1_EHCI             ((USB_EHCI_CapabilityTypeDef *) USB1HSFSP1_BASE)
+#define USB_OTG_HS          ((USB_OTG_GlobalTypeDef *) USBOTG_BASE)
+#define USBH_OHCI           ((USBH_OHCI_TypeDef *) USBH_OHCI_BASE)
+#define USBH_EHCI           ((USBH_EHCI_TypeDef *) USBH_EHCI_BASE)
 
 /**
   * @}
@@ -11357,12 +11401,6 @@ typedef struct
 #define ETH_MACPHYCSR_LNKSTS_Pos            (19U)
 #define ETH_MACPHYCSR_LNKSTS_Msk            (0x1UL << ETH_MACPHYCSR_LNKSTS_Pos)                  /*!< 0x00080000 */
 #define ETH_MACPHYCSR_LNKSTS                ETH_MACPHYCSR_LNKSTS_Msk                            /*!< Link Status */
-#define ETH_MACPHYCSR_JABTO_Pos             (20U)
-#define ETH_MACPHYCSR_JABTO_Msk             (0x1UL << ETH_MACPHYCSR_JABTO_Pos)                   /*!< 0x00100000 */
-#define ETH_MACPHYCSR_JABTO                 ETH_MACPHYCSR_JABTO_Msk                             /*!< Jabber Timeout */
-#define ETH_MACPHYCSR_FALSCARDET_Pos        (21U)
-#define ETH_MACPHYCSR_FALSCARDET_Msk        (0x1UL << ETH_MACPHYCSR_FALSCARDET_Pos)              /*!< 0x00200000 */
-#define ETH_MACPHYCSR_FALSCARDET            ETH_MACPHYCSR_FALSCARDET_Msk                        /*!< False Carrier Detected */
 
 /***************  Bit definition for ETH_MACVR register  ***************/
 #define ETH_MACVR_SNPSVER_Pos               (0U)
@@ -20705,6 +20743,7 @@ typedef struct
 #define PKA_MODE_DOUBLE_BASE_LADDER       ((uint32_t)0x00000027U) /*!< ECC double base ladder  */
 #define PKA_MODE_POINT_CHECK              ((uint32_t)0x00000028U) /*!< Point on elliptic curve check */
 #define PKA_MODE_ECC_PROJECTIVE_AFF       ((uint32_t)0x0000002FU) /*!< ECC projective to affine */
+
 /******************************************************************************/
 /*                                                                            */
 /*                      Memory Cipher Engine (LTDC)                           */
@@ -33502,6 +33541,403 @@ typedef struct
 #define USB_OTG_PCGCCTL_SUSP_Msk                 (0x1UL << USB_OTG_PCGCCTL_SUSP_Pos)          /*!< 0x00000080 */
 #define USB_OTG_PCGCCTL_SUSP                     USB_OTG_PCGCCTL_SUSP_Msk                    /*!< Deep Sleep */
 
+
+/******************************************************************************/
+/*                                                                            */
+/*                                       USBH_EHCI                              */
+/*                                                                            */
+/******************************************************************************/
+/********************  Bit definition for USBH_EHCI_HCCAPBASE register  ********************/
+#define USBH_EHCI_HCCAPBASE_CAPLENGTH_Pos        (0U)
+#define USBH_EHCI_HCCAPBASE_CAPLENGTH_Msk        (0x7FU << USBH_EHCI_HCCAPBASE_CAPLENGTH_Pos)      /*!< 0x0000007F */
+#define USBH_EHCI_HCCAPBASE_CAPLENGTH            USBH_EHCI_HCCAPBASE_CAPLENGTH_Msk                 /*!< Capability Register Length */
+
+#define USBH_EHCI_HCCAPBASE_HCIVERSION_Pos       (15U)
+#define USBH_EHCI_HCCAPBASE_HCIVERSION_Msk       (0xFFFF0000U << USBH_EHCI_HCCAPBASE_HCIVERSION_Pos) /*!< 0xFFFF0000U */
+#define USBH_EHCI_HCCAPBASE_HCIVERSION           USBH_EHCI_HCCAPBASE_HCIVERSION_Msk                  /*!< Capability Register Length */
+
+/********************  Bit definition for USBH_EHCI_HCSPARAMS register  ********************/
+#define USBH_EHCI_HCSPARAMS_N_PORTS_Pos    (0U)
+#define USBH_EHCI_HCSPARAMS_N_PORTS_Msk    (0xFU << USBH_EHCI_HCSPARAMS_N_PORTS_Pos)         /*!< 0x0000000F */
+#define USBH_EHCI_HCSPARAMS_N_PORTS        USBH_EHCI_HCSPARAMS_N_PORTS_Msk                   /*!< Number of Ports */
+
+#define USBH_EHCI_HCSPARAMS_PPC_Pos        (4U)
+#define USBH_EHCI_HCSPARAMS_PPC_Msk        (0x1U << USBH_EHCI_HCSPARAMS_PPC_Pos)             /*!< 0x00000010 */
+#define USBH_EHCI_HCSPARAMS_PPC            USBH_EHCI_HCSPARAMS_PPC_Msk                       /*!< Port Power Control */
+
+#define USBH_EHCI_HCSPARAMS_PRR_Pos        (7U)
+#define USBH_EHCI_HCSPARAMS_PRR_Msk        (0x1U << USBH_EHCI_HCSPARAMS_PRR_Pos)             /*!< 0x00000080 */
+#define USBH_EHCI_HCSPARAMS_PRR            USBH_EHCI_HCSPARAMS_PRR_Msk                       /*!< Port Routing Rules */
+
+#define USBH_EHCI_HCSPARAMS_N_PCC_Pos      (8U)
+#define USBH_EHCI_HCSPARAMS_N_PCC_Msk      (0xFU << USBH_EHCI_HCSPARAMS_N_PCC_Pos)           /*!< 0x00000F00 */
+#define USBH_EHCI_HCSPARAMS_N_PCC          USBH_EHCI_HCSPARAMS_N_PCC_Msk                     /*!< Number of Ports per Companion Controller */
+
+#define USBH_EHCI_HCSPARAMS_N_CC_Pos       (12U)
+#define USBH_EHCI_HCSPARAMS_N_CC_Msk       (0xFU << USBH_EHCI_HCSPARAMS_N_CC_Pos)            /*!< 0x0000F000 */
+#define USBH_EHCI_HCSPARAMS_N_CC           USBH_EHCI_HCSPARAMS_N_CC_Msk                      /*!< Number of Companion Controller */
+
+#define USBH_EHCI_HCSPARAMS_P_INDICATOR_Pos (16U)
+#define USBH_EHCI_HCSPARAMS_P_INDICATOR_Msk (0x1U << USBH_EHCI_HCSPARAMS_P_INDICATOR_Pos)    /*!< 0x00010000 */
+#define USBH_EHCI_HCSPARAMS_P_INDICATOR    USBH_EHCI_HCSPARAMS_P_INDICATOR_Msk               /*!< Port Indicators */
+
+#define USBH_EHCI_HCSPARAMS_DBG_Pos        (20U)
+#define USBH_EHCI_HCSPARAMS_DBG_Msk        (0xFU << USBH_EHCI_HCSPARAMS_DBG_Pos)             /*!< 0x00F00000 */
+#define USBH_EHCI_HCSPARAMS_DBG            USBH_EHCI_HCSPARAMS_DBG_Msk                       /*!< Debug Port Number */
+
+/********************  Bit definition for USBH_EHCI_HCCPARAMS register  ********************/
+#define USBH_EHCI_HCCPARAMS_64BIT_Pos      (0U)
+#define USBH_EHCI_HCCPARAMS_64BIT_Msk      (0x1U << USBH_EHCI_HCCPARAMS_64BIT_Pos)           /*!< 0x00000001 */
+#define USBH_EHCI_HCCPARAMS_64BIT          USBH_EHCI_HCCPARAMS_64BIT_Msk                     /*!< 64-bit Addressing Capability */
+
+#define USBH_EHCI_HCCPARAMS_PFLF_Pos       (1U)
+#define USBH_EHCI_HCCPARAMS_PFLF_Msk       (0x1U << USBH_EHCI_HCCPARAMS_PFLF_Pos)            /*!< 0x00000002 */
+#define USBH_EHCI_HCCPARAMS_PFLF           USBH_EHCI_HCCPARAMS_PFLF_Msk                      /*!< Programmable Frame List Flag */
+
+#define USBH_EHCI_HCCPARAMS_ASPC_Pos       (2U)
+#define USBH_EHCI_HCCPARAMS_ASPC_Msk       (0x1U << USBH_EHCI_HCCPARAMS_ASPC_Pos)            /*!< 0x00000004 */
+#define USBH_EHCI_HCCPARAMS_ASPC           USBH_EHCI_HCCPARAMS_ASPC_Msk                      /*!< Asynchronous Schedule Park Capability */
+
+#define USBH_EHCI_HCCPARAMS_IST_Pos        (4U)
+#define USBH_EHCI_HCCPARAMS_IST_Msk        (0xFU << USBH_EHCI_HCCPARAMS_IST_Pos)             /*!< 0x000000F0 */
+#define USBH_EHCI_HCCPARAMS_IST            USBH_EHCI_HCCPARAMS_IST_Msk                       /*!< Isochronous Scheduling Threshold */
+
+#define USBH_EHCI_HCCPARAMS_EECP_Pos       (8U)
+#define USBH_EHCI_HCCPARAMS_EECP_Msk       (0xFFU << USBH_EHCI_HCCPARAMS_EECP_Pos)           /*!< 0x0000FF00 */
+#define USBH_EHCI_HCCPARAMS_EECP           USBH_EHCI_HCCPARAMS_EECP_Msk                      /*!< EHCI Extended Capabilities Pointer */
+ 
+#define USBH_EHCI_HCCPARAMS_LPM_Pos        (17U)
+#define USBH_EHCI_HCCPARAMS_LPM_Msk        (0x1U << USBH_EHCI_HCCPARAMS_LPM_Pos)             /*!< 0x00020000 */
+#define USBH_EHCI_HCCPARAMS_LPM            USBH_EHCI_HCCPARAMS_LPM_Msk                       /*!< Link Power Management Capability */
+
+#define USBH_EHCI_HCCPARAMS_PPCE_Pos       (18U)
+#define USBH_EHCI_HCCPARAMS_PPCE_Msk       (0x1U << USBH_EHCI_HCCPARAMS_PPCE_Pos)            /*!< 0x00040000 */
+#define USBH_EHCI_HCCPARAMS_PPCE           USBH_EHCI_HCCPARAMS_PPCE_Msk                      /*!< Per-Port Change Event Capability */
+
+#define USBH_EHCI_HCCPARAMS_32FPC_Pos      (19U)
+#define USBH_EHCI_HCCPARAMS_32FPC_Msk      (0x1U << USBH_EHCI_HCCPARAMS_32FPC_Pos)           /*!< 0x00080000 */
+#define USBH_EHCI_HCCPARAMS_32FPC          USBH_EHCI_HCCPARAMS_32FPC_Msk                     /*!< 32-Frame Periodic List Capability */
+
+/********************  Bit definition for USBH_EHCI_USBCMD register  ***********************/
+#define USBH_EHCI_USBCMD_RS_Pos            (0U)
+#define USBH_EHCI_USBCMD_RS_Msk            (0x1U << USBH_EHCI_USBCMD_RS_Pos)                 /*!< 0x00000001 */
+#define USBH_EHCI_USBCMD_RS                USBH_EHCI_USBCMD_RS_Msk                           /*!< Run/Stop */
+
+#define USBH_EHCI_USBCMD_HCRESET_Pos       (1U)
+#define USBH_EHCI_USBCMD_HCRESET_Msk       (0x1U << USBH_EHCI_USBCMD_HCRESET_Pos)            /*!< 0x00000002 */
+#define USBH_EHCI_USBCMD_HCRESET           USBH_EHCI_USBCMD_HCRESET_Msk                      /*!< Host Controller Reset */
+
+#define USBH_EHCI_USBCMD_FLS_Pos           (2U)
+#define USBH_EHCI_USBCMD_FLS_Msk           (0x3U << USBH_EHCI_USBCMD_FLS_Pos)                /*!< 0x0000000C */
+#define USBH_EHCI_USBCMD_FLS               USBH_EHCI_USBCMD_FLS_Msk                          /*!< Frame List Size */
+
+#define USBH_EHCI_USBCMD_PSE_Pos           (4U)
+#define USBH_EHCI_USBCMD_PSE_Msk           (0x1U << USBH_EHCI_USBCMD_PSE_Pos)                /*!< 0x00000010 */
+#define USBH_EHCI_USBCMD_PSE               USBH_EHCI_USBCMD_PSE_Msk                          /*!< Periodic Schedule Enable */
+
+#define USBH_EHCI_USBCMD_ASE_Pos           (5U)
+#define USBH_EHCI_USBCMD_ASE_Msk           (0x1U << USBH_EHCI_USBCMD_ASE_Pos)                /*!< 0x00000020 */
+#define USBH_EHCI_USBCMD_ASE               USBH_EHCI_USBCMD_ASE_Msk                          /*!< Asynchronous Schedule Enable */
+
+#define USBH_EHCI_USBCMD_IAA_Pos           (6U)
+#define USBH_EHCI_USBCMD_IAA_Msk           (0x1U << USBH_EHCI_USBCMD_IAA_Pos)                /*!< 0x00000040 */
+#define USBH_EHCI_USBCMD_IAA               USBH_EHCI_USBCMD_IAA_Msk                          /*!< Interrupt on Async Advance Doorbell */
+
+#define USBH_EHCI_USBCMD_LHCRESET_Pos      (7U)
+#define USBH_EHCI_USBCMD_LHCRESET_Msk      (0x1U << USBH_EHCI_USBCMD_LHCRESET_Pos)           /*!< 0x00000080 */
+#define USBH_EHCI_USBCMD_LHCRESET          USBH_EHCI_USBCMD_LHCRESET_Msk                     /*!< Light Host Controller Reset (OPTIONAL) */
+
+#define USBH_EHCI_USBCMD_ASPMC_Pos         (8U)
+#define USBH_EHCI_USBCMD_ASPMC_Msk         (0x3U << USBH_EHCI_USBCMD_ASPMC_Pos)              /*!< 0x00000300 */
+#define USBH_EHCI_USBCMD_ASPMC             USBH_EHCI_USBCMD_ASPMC_Msk                        /*!< Asynchronous Schedule Park Mode Count (OPTIONAL) */
+
+#define USBH_EHCI_USBCMD_ASPME_Pos         (11U)
+#define USBH_EHCI_USBCMD_ASPME_Msk         (0x1U << USBH_EHCI_USBCMD_ASPME_Pos)              /*!< 0x00000800 */
+#define USBH_EHCI_USBCMD_ASPME             USBH_EHCI_USBCMD_ASPME_Msk                        /*!< Asynchronous Schedule Park Mode Enable (OPTIONAL) */
+
+#define USBH_EHCI_USBCMD_ITC_Pos           (16U)
+#define USBH_EHCI_USBCMD_ITC_Msk           (0xFFU << USBH_EHCI_USBCMD_ITC_Pos)               /*!< 0x00FF0000 */
+#define USBH_EHCI_USBCMD_ITC               USBH_EHCI_USBCMD_ITC_Msk                          /*!< Interrupt Threshold Control */
+
+#define USBH_EHCI_USBCMD_HIRD_Pos          (24U)
+#define USBH_EHCI_USBCMD_HIRD_Msk          (0xFU << USBH_EHCI_USBCMD_HIRD_Pos)               /*!< 0x0F000000 */
+#define USBH_EHCI_USBCMD_HIRD              USBH_EHCI_USBCMD_HIRD_Msk                         /*!< Host-Initiated Resume Duration */
+
+/********************  Bit definition for USBH_EHCI_USBSTS register  ***********************/
+#define USBH_EHCI_USBSTS_USBINT_Pos        (0U)
+#define USBH_EHCI_USBSTS_USBINT_Msk        (0x1U << USBH_EHCI_USBSTS_USBINT_Pos)             /*!< 0x00000001 */
+#define USBH_EHCI_USBSTS_USBINT            USBH_EHCI_USBSTS_USBINT_Msk                       /*!< USB Interrupt (USBINT) */
+
+#define USBH_EHCI_USBSTS_USBERRINT_Pos     (1U)
+#define USBH_EHCI_USBSTS_USBERRINT_Msk     (0x1U << USBH_EHCI_USBSTS_USBERRINT_Pos)          /*!< 0x00000002 */
+#define USBH_EHCI_USBSTS_USBERRINT         USBH_EHCI_USBSTS_USBERRINT_Msk                    /*!< USB Error Interrupt (USBERRINT) */
+
+#define USBH_EHCI_USBSTS_PCD_Pos           (2U)
+#define USBH_EHCI_USBSTS_PCD_Msk           (0x1U << USBH_EHCI_USBSTS_PCD_Pos)                /*!< 0x00000004 */
+#define USBH_EHCI_USBSTS_PCD               USBH_EHCI_USBSTS_PCD_Msk                          /*!< Port Change Detect */
+
+#define USBH_EHCI_USBSTS_FLR_Pos           (3U)
+#define USBH_EHCI_USBSTS_FLR_Msk           (0x1U << USBH_EHCI_USBSTS_FLR_Pos)                /*!< 0x00000008 */
+#define USBH_EHCI_USBSTS_FLR               USBH_EHCI_USBSTS_FLR_Msk                          /*!< Frame List Rollover */
+
+#define USBH_EHCI_USBSTS_HSE_Pos           (4U)
+#define USBH_EHCI_USBSTS_HSE_Msk           (0x1U << USBH_EHCI_USBSTS_HSE_Pos)                /*!< 0x00000010 */
+#define USBH_EHCI_USBSTS_HSE               USBH_EHCI_USBSTS_HSE_Msk                          /*!< Host System Error */
+
+#define USBH_EHCI_USBSTS_IAA_Pos           (5U)
+#define USBH_EHCI_USBSTS_IAA_Msk           (0x1U << USBH_EHCI_USBSTS_IAA_Pos)                /*!< 0x00000020 */
+#define USBH_EHCI_USBSTS_IAA               USBH_EHCI_USBSTS_IAA_Msk                          /*!< Interrupt on Async Advance */
+
+#define USBH_EHCI_USBSTS_HCH_Pos           (12U)
+#define USBH_EHCI_USBSTS_HCH_Msk           (0x1U << USBH_EHCI_USBSTS_HCH_Pos)                /*!< 0x00001000 */
+#define USBH_EHCI_USBSTS_HCH               USBH_EHCI_USBSTS_HCH_Msk                          /*!< HCHalted */
+
+#define USBH_EHCI_USBSTS_RECL_Pos          (13U)
+#define USBH_EHCI_USBSTS_RECL_Msk          (0x1U << USBH_EHCI_USBSTS_RECL_Pos)               /*!< 0x00002000 */
+#define USBH_EHCI_USBSTS_RECL              USBH_EHCI_USBSTS_RECL_Msk                         /*!< Reclamation */
+
+#define USBH_EHCI_USBSTS_PSS_Pos           (14U)
+#define USBH_EHCI_USBSTS_PSS_Msk           (0x1U << USBH_EHCI_USBSTS_PSS_Pos)                /*!< 0x00004000 */
+#define USBH_EHCI_USBSTS_PSS               USBH_EHCI_USBSTS_PSS_Msk                          /*!< Periodic Schedule Status */
+
+#define USBH_EHCI_USBSTS_ASS_Pos           (15U)
+#define USBH_EHCI_USBSTS_ASS_Msk           (0x1U << USBH_EHCI_USBSTS_ASS_Pos)                /*!< 0x00008000 */
+#define USBH_EHCI_USBSTS_ASS               USBH_EHCI_USBSTS_ASS_Msk                          /*!< Asynchronous Schedule Status */
+
+/********************  Bit definition for USBH_EHCI_USBINTR register  **********************/
+#define USBH_EHCI_USBINTR_USBIE_Pos        (0U)
+#define USBH_EHCI_USBINTR_USBIE_Msk        (0x1U << USBH_EHCI_USBINTR_USBIE_Pos)             /*!< 0x00000001 */
+#define USBH_EHCI_USBINTR_USBIE            USBH_EHCI_USBINTR_USBIE_Msk                       /*!< USB Interrupt Enable */
+
+#define USBH_EHCI_USBINTR_USBEIE_Pos       (1U)
+#define USBH_EHCI_USBINTR_USBEIE_Msk       (0x1U << USBH_EHCI_USBINTR_USBEIE_Pos)            /*!< 0x00000002 */
+#define USBH_EHCI_USBINTR_USBEIE           USBH_EHCI_USBINTR_USBEIE_Msk                      /*!< USB Error Interrupt Enable */
+
+#define USBH_EHCI_USBINTR_PCIE_Pos         (2U)
+#define USBH_EHCI_USBINTR_PCIE_Msk         (0x1U << USBH_EHCI_USBINTR_PCIE_Pos)              /*!< 0x00000004 */
+#define USBH_EHCI_USBINTR_PCIE             USBH_EHCI_USBINTR_PCIE_Msk                        /*!< Port Change Interrupt Enable */
+
+#define USBH_EHCI_USBINTR_FLRE_Pos         (3U)
+#define USBH_EHCI_USBINTR_FLRE_Msk         (0x1U << USBH_EHCI_USBINTR_FLRE_Pos)              /*!< 0x00000008 */
+#define USBH_EHCI_USBINTR_FLRE             USBH_EHCI_USBINTR_FLRE_Msk                        /*!< Frame List Rollover Enable */
+
+#define USBH_EHCI_USBINTR_HSEE_Pos         (4U)
+#define USBH_EHCI_USBINTR_HSEE_Msk         (0x1U << USBH_EHCI_USBINTR_HSEE_Pos)              /*!< 0x00000010 */
+#define USBH_EHCI_USBINTR_HSEE             USBH_EHCI_USBINTR_HSEE_Msk                        /*!< Host System Error Enable */
+
+#define USBH_EHCI_USBINTR_IAAE_Pos         (5U)
+#define USBH_EHCI_USBINTR_IAAE_Msk         (0x1U << USBH_EHCI_USBINTR_IAAE_Pos)              /*!< 0x00000020 */
+#define USBH_EHCI_USBINTR_IAAE             USBH_EHCI_USBINTR_IAAE_Msk                        /*!< Interrupt on Async Advance Enable */
+
+/********************  Bit definition for USBH_EHCI_FRINDEX register  **********************/
+#define USBH_EHCI_FRINDEX_FRAMEINDEX_Pos   (0U)
+#define USBH_EHCI_FRINDEX_FRAMEINDEX_Msk   (0x3FFFU << USBH_EHCI_FRINDEX_FRAMEINDEX_Pos)     /*!< 0x00003FFF */
+#define USBH_EHCI_FRINDEX_FRAMEINDEX       USBH_EHCI_FRINDEX_FRAMEINDEX_Msk                  /*!< Frame Index */
+
+/********************  Bit definition for USBH_EHCI_CTRLDSSEGMENT register  ****************/
+#define USBH_EHCI_CTRLDSSEGMENT_SEGMENT_Pos (0U)
+#define USBH_EHCI_CTRLDSSEGMENT_SEGMENT_Msk (0xFFFFFFFFU << USBH_EHCI_CTRLDSSEGMENT_SEGMENT_Pos) /*!< 0xFFFFFFFF */
+#define USBH_EHCI_CTRLDSSEGMENT_SEGMENT     USBH_EHCI_CTRLDSSEGMENT_SEGMENT_Msk                  /*!< Control Data Structure Segment */
+
+/********************  Bit definition for USBH_EHCI_PERIODICLISTBASE register  *************/
+#define USBH_EHCI_PERIODICLISTBASE_BASEADDR_Pos (12U)
+#define USBH_EHCI_PERIODICLISTBASE_BASEADDR_Msk (0xFFFFFU << USBH_EHCI_PERIODICLISTBASE_BASEADDR_Pos) /*!< 0xFFFFF000 */
+#define USBH_EHCI_PERIODICLISTBASE_BASEADDR     USBH_EHCI_PERIODICLISTBASE_BASEADDR_Msk                /*!< Base Address (Low) */
+
+/********************  Bit definition for USBH_EHCI_ASYNCLISTADDR register  ****************/
+#define USBH_EHCI_ASYNCLISTADDR_LPL_Pos    (5U)
+#define USBH_EHCI_ASYNCLISTADDR_LPL_Msk    (0x7FFFFFFU << USBH_EHCI_ASYNCLISTADDR_LPL_Pos)    /*!< 0xFFFFFFE0 */
+#define USBH_EHCI_ASYNCLISTADDR_LPL        USBH_EHCI_ASYNCLISTADDR_LPL_Msk                   /*!< Link Pointer Low (LPL) */
+
+/********************  Bit definition for USBH_EHCI_CONFIGFLAG register  *******************/
+#define USBH_EHCI_CONFIGFLAG_CF_Pos        (0U)
+#define USBH_EHCI_CONFIGFLAG_CF_Msk        (0x1U << USBH_EHCI_CONFIGFLAG_CF_Pos)             /*!< 0x00000001 */
+#define USBH_EHCI_CONFIGFLAG_CF            USBH_EHCI_CONFIGFLAG_CF_Msk                       /*!< Configure Flag (CF) */
+
+/********************  Bit definition for USBH_EHCI_PORTSC register  ***********************/
+#define USBH_EHCI_PORTSC_CCS_Pos           (0U)
+#define USBH_EHCI_PORTSC_CCS_Msk           (0x1U << USBH_EHCI_PORTSC_CCS_Pos)                /*!< 0x00000001 */
+#define USBH_EHCI_PORTSC_CCS               USBH_EHCI_PORTSC_CCS_Msk                          /*!< Current Connect Status */
+
+#define USBH_EHCI_PORTSC_CSC_Pos           (1U)
+#define USBH_EHCI_PORTSC_CSC_Msk           (0x1U << USBH_EHCI_PORTSC_CSC_Pos)                /*!< 0x00000002 */
+#define USBH_EHCI_PORTSC_CSC               USBH_EHCI_PORTSC_CSC_Msk                          /*!< Connect Status Change */
+
+#define USBH_EHCI_PORTSC_PED_Pos           (2U)
+#define USBH_EHCI_PORTSC_PED_Msk           (0x1U << USBH_EHCI_PORTSC_PED_Pos)                /*!< 0x00000004 */
+#define USBH_EHCI_PORTSC_PED               USBH_EHCI_PORTSC_PED_Msk                          /*!< Port Enabled/Disabled */
+
+#define USBH_EHCI_PORTSC_PEC_Pos           (3U)
+#define USBH_EHCI_PORTSC_PEC_Msk           (0x1U << USBH_EHCI_PORTSC_PEC_Pos)                /*!< 0x00000008 */
+#define USBH_EHCI_PORTSC_PEC               USBH_EHCI_PORTSC_PEC_Msk                          /*!< Port Enable/Disable Change */
+
+#define USBH_EHCI_PORTSC_OCA_Pos           (4U)
+#define USBH_EHCI_PORTSC_OCA_Msk           (0x1U << USBH_EHCI_PORTSC_OCA_Pos)                /*!< 0x00000010 */
+#define USBH_EHCI_PORTSC_OCA               USBH_EHCI_PORTSC_OCA_Msk                          /*!< Over-current Active */
+
+#define USBH_EHCI_PORTSC_OCC_Pos           (5U)
+#define USBH_EHCI_PORTSC_OCC_Msk           (0x1U << USBH_EHCI_PORTSC_OCC_Pos)                /*!< 0x00000020 */
+#define USBH_EHCI_PORTSC_OCC               USBH_EHCI_PORTSC_OCC_Msk                          /*!< Over-current Change */
+
+#define USBH_EHCI_PORTSC_FPR_Pos           (6U)
+#define USBH_EHCI_PORTSC_FPR_Msk           (0x1U << USBH_EHCI_PORTSC_FPR_Pos)                /*!< 0x00000040 */
+#define USBH_EHCI_PORTSC_FPR               USBH_EHCI_PORTSC_FPR_Msk                          /*!< Force Port Resume */
+
+#define USBH_EHCI_PORTSC_SUSP_Pos          (7U)
+#define USBH_EHCI_PORTSC_SUSP_Msk          (0x1U << USBH_EHCI_PORTSC_SUSP_Pos)               /*!< 0x00000080 */
+#define USBH_EHCI_PORTSC_SUSP              USBH_EHCI_PORTSC_SUSP_Msk                         /*!< Suspend */
+
+#define USBH_EHCI_PORTSC_PR_Pos            (8U)
+#define USBH_EHCI_PORTSC_PR_Msk            (0x1U << USBH_EHCI_PORTSC_PR_Pos)                 /*!< 0x00000100 */
+#define USBH_EHCI_PORTSC_PR                USBH_EHCI_PORTSC_PR_Msk                           /*!< Port Reset */
+
+#define USBH_EHCI_PORTSC_SUSPEND_L1_Pos    (9U)
+#define USBH_EHCI_PORTSC_SUSPEND_L1_Msk    (0x1U << USBH_EHCI_PORTSC_SUSPEND_L1_Pos)         /*!< 0x00000200 */
+#define USBH_EHCI_PORTSC_SUSPEND_L1        USBH_EHCI_PORTSC_SUSPEND_L1_Msk                   /*!< Suspend using L1 */
+
+#define USBH_EHCI_PORTSC_LS_Pos            (10U)
+#define USBH_EHCI_PORTSC_LS_Msk            (0x3U << USBH_EHCI_PORTSC_LS_Pos)                 /*!< 0x00000C00 */
+#define USBH_EHCI_PORTSC_LS                USBH_EHCI_PORTSC_LS_Msk                           /*!< Line Status */
+
+#define USBH_EHCI_PORTSC_PP_Pos            (12U)
+#define USBH_EHCI_PORTSC_PP_Msk            (0x1U << USBH_EHCI_PORTSC_PP_Pos)                 /*!< 0x00001000 */
+#define USBH_EHCI_PORTSC_PP                USBH_EHCI_PORTSC_PP_Msk                           /*!< Port Power */
+
+#define USBH_EHCI_PORTSC_PO_Pos            (13U)
+#define USBH_EHCI_PORTSC_PO_Msk            (0x1U << USBH_EHCI_PORTSC_PO_Pos)                 /*!< 0x00002000 */
+#define USBH_EHCI_PORTSC_PO                USBH_EHCI_PORTSC_PO_Msk                           /*!< Port Owner */
+
+#define USBH_EHCI_PORTSC_PIC_Pos           (14U)
+#define USBH_EHCI_PORTSC_PIC_Msk           (0x3U << USBH_EHCI_PORTSC_PIC_Pos)                /*!< 0x0000C000 */
+#define USBH_EHCI_PORTSC_PIC               USBH_EHCI_PORTSC_PIC_Msk                          /*!< Port Indicator Control */
+
+#define USBH_EHCI_PORTSC_PTC_Pos           (16U)
+#define USBH_EHCI_PORTSC_PTC_Msk           (0xFU << USBH_EHCI_PORTSC_PTC_Pos)                /*!< 0x000F0000 */
+#define USBH_EHCI_PORTSC_PTC               USBH_EHCI_PORTSC_PTC_Msk                          /*!< Port Test Control */
+
+#define USBH_EHCI_PORTSC_WKCNNT_E_Pos      (20U)
+#define USBH_EHCI_PORTSC_WKCNNT_E_Msk      (0x1U << USBH_EHCI_PORTSC_WKCNNT_E_Pos)           /*!< 0x00100000 */
+#define USBH_EHCI_PORTSC_WKCNNT_E          USBH_EHCI_PORTSC_WKCNNT_E_Msk                     /*!< Wake on Connect Enable */
+
+#define USBH_EHCI_PORTSC_WKDSCNNT_E_Pos    (21U)
+#define USBH_EHCI_PORTSC_WKDSCNNT_E_Msk    (0x1U << USBH_EHCI_PORTSC_WKDSCNNT_E_Pos)         /*!< 0x00200000 */
+#define USBH_EHCI_PORTSC_WKDSCNNT_E        USBH_EHCI_PORTSC_WKDSCNNT_E_Msk                   /*!< Wake on Disconnect Enable */
+
+#define USBH_EHCI_PORTSC_WKOC_E_Pos        (22U)
+#define USBH_EHCI_PORTSC_WKOC_E_Msk        (0x1U << USBH_EHCI_PORTSC_WKOC_E_Pos)             /*!< 0x00400000 */
+#define USBH_EHCI_PORTSC_WKOC_E            USBH_EHCI_PORTSC_WKOC_E_Msk                       /*!< Wake on Over-current Enable */
+
+#define USBH_EHCI_PORTSC_SUSPEND_STATUS_Pos (23U)
+#define USBH_EHCI_PORTSC_SUSPEND_STATUS_Msk (0x3U << USBH_EHCI_PORTSC_SUSPEND_STATUS_Pos)    /*!< 0x01800000 */
+#define USBH_EHCI_PORTSC_SUSPEND_STATUS    USBH_EHCI_PORTSC_SUSPEND_STATUS_Msk               /*!< Suspend Status */
+
+#define USBH_EHCI_PORTSC_DEVICE_ADDR_Pos   (25U)
+#define USBH_EHCI_PORTSC_DEVICE_ADDR_Msk   (0x7FU << USBH_EHCI_PORTSC_DEVICE_ADDR_Pos)       /*!< 0xFE000000 */
+#define USBH_EHCI_PORTSC_DEVICE_ADDR       USBH_EHCI_PORTSC_DEVICE_ADDR_Msk                  /*!< Device Address */
+
+/********************  Bit definition for USBH_EHCI_INSNREG01 register  **********************/
+#define USBH_EHCI_INSNREG01_IN_THRESHOLD_Pos        (0U)
+#define USBH_EHCI_INSNREG01_IN_THRESHOLD_Msk        (0xFFU << USBH_EHCI_INSNREG01_IN_THRESHOLD_Pos)            /*!< 0x000000FF */
+#define USBH_EHCI_INSNREG01_IN_THRESHOLD            USBH_EHCI_INSNREG01_IN_THRESHOLD_Msk                       /*!< The value specified here is the number of 32-bit words */
+
+#define USBH_EHCI_INSNREG01_OUT_THRESHOLD_Pos       (16U)
+#define USBH_EHCI_INSNREG01_OUT_THRESHOLD_Msk       (0xFFU << USBH_EHCI_INSNREG01_OUT_THRESHOLD_Pos)           /*!< 0x00FF0000 */
+#define USBH_EHCI_INSNREG01_OUT_THRESHOLD           USBH_EHCI_INSNREG01_OUT_THRESHOLD_Msk                      /*!< The value specified here is the number of 32-bit words */
+
+/********************  Bit definition for USBH_EHCI_INSNREG02 register  **********************/
+#define USBH_EHCI_INSNREG02_PKT_BUF_Pos             (0U)
+#define USBH_EHCI_INSNREG02_PKT_BUF_Msk             (0xFFU << USBH_EHCI_INSNREG02_PKT_BUF_Pos)                 /*!< 0x000000FF */
+#define USBH_EHCI_INSNREG02_PKT_BUF                 USBH_EHCI_INSNREG02_PKT_BUF_Msk                            /*!< Programmable packet buffer depth */
+
+/********************  Bit definition for USBH_EHCI_INSNREG03 register  **********************/
+#define USBH_EHCI_INSNREG03_BRK_MEM_TRANS_Pos       (0U)
+#define USBH_EHCI_INSNREG03_BRK_MEM_TRANS_Msk       (0x1U << USBH_EHCI_INSNREG03_BRK_MEM_TRANS_Pos)            /*!< 0x00000001 */
+#define USBH_EHCI_INSNREG03_BRK_MEM_TRANS           USBH_EHCI_INSNREG03_BRK_MEM_TRANS_Msk                      /*!< Break memory transfer */
+
+#define USBH_EHCI_INSNREG03_TIME_AVAIL_OFF_Pos      (1U)
+#define USBH_EHCI_INSNREG03_TIME_AVAIL_OFF_Msk      (0xFFU << USBH_EHCI_INSNREG03_TIME_AVAIL_OFF_Pos)          /*!< 0x000001FE */
+#define USBH_EHCI_INSNREG03_TIME_AVAIL_OFF          USBH_EHCI_INSNREG03_TIME_AVAIL_OFF_Msk                     /*!< Time available offset */
+
+#define USBH_EHCI_INSNREG03_FRM_LST_FETCH_Pos       (9U)
+#define USBH_EHCI_INSNREG03_FRM_LST_FETCH_Msk       (0x1U << USBH_EHCI_INSNREG03_FRM_LST_FETCH_Pos)            /*!< 0x00000200 */
+#define USBH_EHCI_INSNREG03_FRM_LST_FETCH           USBH_EHCI_INSNREG03_FRM_LST_FETCH_Msk                      /*!< Setting this bit will force the host controller to fetch the periodic frame list in every microfram */
+
+#define USBH_EHCI_INSNREG03_TX_TRA_DELAY_Pos        (10U)
+#define USBH_EHCI_INSNREG03_TX_TRA_DELAY_Msk        (0x7U << USBH_EHCI_INSNREG03_TX_TRA_DELAY_Pos)             /*!< 0x00001C00 */
+#define USBH_EHCI_INSNREG03_TX_TRA_DELAY            USBH_EHCI_INSNREG03_TX_TRA_DELAY_Msk                       /*!< Tx-Tx turnaround delay add on */
+
+#define USBH_EHCI_INSNREG03_TESTSE_NAK_Pos          (13U)
+#define USBH_EHCI_INSNREG03_TESTSE_NAK_Msk          (0x1U << USBH_EHCI_INSNREG03_TESTSE_NAK_Pos)               /*!< 0x00002000 */
+#define USBH_EHCI_INSNREG03_TESTSE_NAK              USBH_EHCI_INSNREG03_TESTSE_NAK_Msk                         /*!< TestSE NAK */
+
+#define USBH_EHCI_INSNREG03_EN_CLK256_CHECK_Pos     (14U)
+#define USBH_EHCI_INSNREG03_EN_CLK256_CHECK_Msk     (0x1U << USBH_EHCI_INSNREG03_EN_CLK256_CHECK_Pos)          /*!< 0x00004000 */
+#define USBH_EHCI_INSNREG03_EN_CLK256_CHECK         USBH_EHCI_INSNREG03_EN_CLK256_CHECK_Msk                    /*!< Enable 256 clock checking */
+
+#define USBH_EHCI_INSNREG03_ENABLE_LS_GLITCH_Pos    (16U)
+#define USBH_EHCI_INSNREG03_ENABLE_LS_GLITCH_Msk    (0x1U << USBH_EHCI_INSNREG03_ENABLE_LS_GLITCH_Pos)         /*!< 0x00010000 */
+#define USBH_EHCI_INSNREG03_ENABLE_LS_GLITCH        USBH_EHCI_INSNREG03_ENABLE_LS_GLITCH_Msk                   /*!< Enable/disable enhancement for line state glitch */
+
+/********************  Bit definition for USBH_EHCI_INSNREG04 register  **********************/
+#define USBH_EHCI_INSNREG04_HCSPARAMS_WRT_Pos       (0U)
+#define USBH_EHCI_INSNREG04_HCSPARAMS_WRT_Msk       (0x1U << USBH_EHCI_INSNREG04_HCSPARAMS_WRT_Pos)            /*!< 0x00000001 */
+#define USBH_EHCI_INSNREG04_HCSPARAMS_WRT           USBH_EHCI_INSNREG04_HCSPARAMS_WRT_Msk                      /*!< Bit 0 */
+
+#define USBH_EHCI_INSNREG04_HCCPARAMS_WRT_Pos       (1U)
+#define USBH_EHCI_INSNREG04_HCCPARAMS_WRT_Msk       (0x1U << USBH_EHCI_INSNREG04_HCCPARAMS_WRT_Pos)            /*!< 0x00000002 */
+#define USBH_EHCI_INSNREG04_HCCPARAMS_WRT           USBH_EHCI_INSNREG04_HCCPARAMS_WRT_Msk                      /*!< When this bit is 1, the USBH_EHCI_HCSPARAMS register becomes writable */
+
+#define USBH_EHCI_INSNREG04_ASYNC_PIPELINE_DIS_Pos  (3U)
+#define USBH_EHCI_INSNREG04_ASYNC_PIPELINE_DIS_Msk  (0x1U << USBH_EHCI_INSNREG04_ASYNC_PIPELINE_DIS_Pos)       /*!< 0x00000008 */
+#define USBH_EHCI_INSNREG04_ASYNC_PIPELINE_DIS      USBH_EHCI_INSNREG04_ASYNC_PIPELINE_DIS_Msk                 /*!< When this bit is 1, the USBH_EHCI_HCCPARAMS register bits 17, 15:4, and 2:0 become writable */
+
+#define USBH_EHCI_INSNREG04_SUSPEND_SIGNAL_Pos      (5U)
+#define USBH_EHCI_INSNREG04_SUSPEND_SIGNAL_Msk      (0x1U << USBH_EHCI_INSNREG04_SUSPEND_SIGNAL_Pos)           /*!< 0x00000020 */
+#define USBH_EHCI_INSNREG04_SUSPEND_SIGNAL          USBH_EHCI_INSNREG04_SUSPEND_SIGNAL_Msk                     /*!< Suspend signal */
+
+/********************  Bit definition for USBH_EHCI_INSNREG05 register  **********************/
+#define USBH_EHCI_INSNREG05_VSTATUS_Pos             (0U)
+#define USBH_EHCI_INSNREG05_VSTATUS_Msk             (0xFFU << USBH_EHCI_INSNREG05_VSTATUS_Pos)                 /*!< 0x000000FF */
+#define USBH_EHCI_INSNREG05_VSTATUS                 USBH_EHCI_INSNREG05_VSTATUS_Msk                            /*!< UTMI VStatus (vendor status) */
+
+#define USBH_EHCI_INSNREG05_VCONTROL_Pos            (8U)
+#define USBH_EHCI_INSNREG05_VCONTROL_Msk            (0xFU << USBH_EHCI_INSNREG05_VCONTROL_Pos)                 /*!< 0x00000F00 */
+#define USBH_EHCI_INSNREG05_VCONTROL                USBH_EHCI_INSNREG05_VCONTROL_Msk                           /*!< UTMI VCONTROL (vendor control) */
+
+#define USBH_EHCI_INSNREG05_VCONTROL_LDM_Pos        (12U)
+#define USBH_EHCI_INSNREG05_VCONTROL_LDM_Msk        (0x1U << USBH_EHCI_INSNREG05_VCONTROL_LDM_Pos)             /*!< 0x00001000 */
+#define USBH_EHCI_INSNREG05_VCONTROL_LDM            USBH_EHCI_INSNREG05_VCONTROL_LDM_Msk                       /*!< UTMI VCONTROLLoad (vendor control load) */
+
+#define USBH_EHCI_INSNREG05_VPORT_Pos               (13U)
+#define USBH_EHCI_INSNREG05_VPORT_Msk               (0xFU << USBH_EHCI_INSNREG05_VPORT_Pos)                    /*!< 0x0001E000 */
+#define USBH_EHCI_INSNREG05_VPORT                   USBH_EHCI_INSNREG05_VPORT_Msk                              /*!< UTMI VPORT */
+
+#define USBH_EHCI_INSNREG05_VBUSY_Pos               (17U)
+#define USBH_EHCI_INSNREG05_VBUSY_Msk               (0x1U << USBH_EHCI_INSNREG05_VBUSY_Pos)                    /*!< 0x00020000 */
+#define USBH_EHCI_INSNREG05_VBUSY                   USBH_EHCI_INSNREG05_VBUSY_Msk                              /*!< UTMI VBUSY */
+
+/********************  Bit definition for USBH_EHCI_INSNREG06 register  **********************/
+#define USBH_EHCI_INSNREG06_SUC_BEATS_Pos           (0U)
+#define USBH_EHCI_INSNREG06_SUC_BEATS_Msk           (0xFU << USBH_EHCI_INSNREG06_SUC_BEATS_Pos)                /*!< 0x0000000F */
+#define USBH_EHCI_INSNREG06_SUC_BEATS               USBH_EHCI_INSNREG06_SUC_BEATS_Msk                          /*!< Number of successful beats */
+
+#define USBH_EHCI_INSNREG06_EXP_BEATS_Pos           (4U)
+#define USBH_EHCI_INSNREG06_EXP_BEATS_Msk           (0x1FU << USBH_EHCI_INSNREG06_EXP_BEATS_Pos)               /*!< 0x000001F0 */
+#define USBH_EHCI_INSNREG06_EXP_BEATS               USBH_EHCI_INSNREG06_EXP_BEATS_Msk                          /*!< Number of expected beats */
+
+#define USBH_EHCI_INSNREG06_HBURST_Pos              (9U)
+#define USBH_EHCI_INSNREG06_HBURST_Msk              (0x7U << USBH_EHCI_INSNREG06_HBURST_Pos)                   /*!< 0x00000E00 */
+#define USBH_EHCI_INSNREG06_HBURST                  USBH_EHCI_INSNREG06_HBURST_Msk                             /*!< HBURST value of the control phase at which the AHB error occurred */
+
+#define USBH_EHCI_INSNREG06_AHB_ECAP_Pos            (31U)
+#define USBH_EHCI_INSNREG06_AHB_ECAP_Msk            (0x1U << USBH_EHCI_INSNREG06_AHB_ECAP_Pos)                 /*!< 0x80000000 */
+#define USBH_EHCI_INSNREG06_AHB_ECAP                USBH_EHCI_INSNREG06_AHB_ECAP_Msk                           /*!< AHB error captured */
+
+/********************  Bit definition for USBH_EHCI_INSNREG07 register  **********************/
+#define USBH_EHCI_INSNREG07_AHB_MST_ERR_Pos          (0U)
+#define USBH_EHCI_INSNREG07_AHB_MST_ERR_Msk          (0xFFFFFFFFU << USBH_EHCI_INSNREG07_AHB_MST_ERR_Pos)      /*!< 0xFFFFFFFF */
+#define USBH_EHCI_INSNREG07_AHB_MST_ERR              USBH_EHCI_INSNREG07_AHB_MST_ERR_Msk                       /*!< AHB master error address */
+
 /******************************************************************************/
 /*                                                                            */
 /*                   USBPHYC block description (USBPHYC)                    */
@@ -34049,13 +34485,11 @@ typedef struct
 /** @addtogroup Exported_macros
   * @{
   */
-
 /******************************* ADC Instances ********************************/
 #define IS_ADC_ALL_INSTANCE(INSTANCE) (((INSTANCE) == ADC1) || \
                                        ((INSTANCE) == ADC2))
 
 #define IS_ADC_MULTIMODE_MASTER_INSTANCE(INSTANCE) ((INSTANCE) == ADC1)
-
 /******************************** DTS Instances ******************************/
 #define IS_DTS_ALL_INSTANCE(INSTANCE) ((INSTANCE) == DTS1)
 
@@ -34750,7 +35184,7 @@ typedef struct
 #define IS_PCD_ALL_INSTANCE(INSTANCE) ((INSTANCE) == USB_OTG_HS)
 
 /****************************** USB HCD Instances ********************************/
-#define IS_HCD_ALL_INSTANCE(INSTANCE) ((INSTANCE) == USB_OTG_HS)
+#define IS_HCD_ALL_INSTANCE(INSTANCE) (((INSTANCE) == USB_OTG_HS) || ((INSTANCE) == USBH_EHCI) || ((INSTANCE) == USBH_OHCI))
 
 /****************************** SAI Instances ********************************/
 #define IS_SAI_ALL_INSTANCE(INSTANCE) (((INSTANCE) == SAI1_Block_A) || \
@@ -34828,11 +35262,11 @@ typedef struct
 /******************************* SAES VERSION ********************************/
 #define SAES_VERSION(INSTANCE) ((INSTANCE)->VERR)
 
+/******************************* MCE VERSION ********************************/
+#define MCE_VERSION(INSTANCE) ((INSTANCE)->VERR)
 /******************************* PKA VERSION ********************************/
 #define PKA_VERSION(INSTANCE) ((INSTANCE)->VERR)
 
-/******************************* MCE VERSION ********************************/
-#define MCE_VERSION(INSTANCE) ((INSTANCE)->VERR)
 
 /******************************* DCMIPP VERSION ********************************/
 #define DCMIPP_VERSION(INSTANCE) ((INSTANCE)->VERR)

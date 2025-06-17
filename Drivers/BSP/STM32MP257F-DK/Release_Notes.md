@@ -27,7 +27,27 @@ From project settings points of view, user has only to add the necessary driverâ
 # Update History
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section0" checked aria-hidden="true">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true">
+<label for="collapse-section1" aria-hidden="true">__V1.2.0 / 03-June-2025__</label>
+<div>			
+
+## Main Changes
+
+ - Refactor(MP2-DK): ErrorHandler function is externally defined in the examples for DK board.
+ - fix(MP25): added conditional compilation for CORE_CM33 in BSP_COM_Init
+ - PMIC: add a default ramp delay for regulators
+ - PMIC: Factorize regulator enabling and disabling
+
+## Notes
+
+stm32mp257f_disco_conf_template.h file must be copied in user application as >stm32mp257f_disco_conf.h with optional configuration update
+
+</div>
+:::
+
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section0" aria-hidden="true">
 <label for="collapse-section0" aria-hidden="true">__V1.0.0 / 31-May-2024__</label>
 <div>			
 

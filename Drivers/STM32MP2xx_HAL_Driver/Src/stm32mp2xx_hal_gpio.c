@@ -940,7 +940,7 @@ HAL_StatusTypeDef HAL_GPIO_ReleasePinSemaphore(GPIO_TypeDef *GPIOx, uint16_t GPI
 {
   uint32_t position = 0x00;
   uint32_t iocurrent;
-  __IO uint32_t *regaddr;
+  __IO uintptr_t *regaddr;
 
   /* Check the parameters */
   assert_param(IS_GPIO_ALL_INSTANCE(GPIOx));
@@ -954,7 +954,7 @@ HAL_StatusTypeDef HAL_GPIO_ReleasePinSemaphore(GPIO_TypeDef *GPIOx, uint16_t GPI
     if (iocurrent != 0U)
     {
       /* Release Semaphore*/
-      regaddr = &GPIOx->SEMCR0 + (GPIO_SEMCFGR_OFFSET * position);
+      regaddr = (uintptr_t *)&GPIOx->SEMCR0 + (GPIO_SEMCFGR_OFFSET * position);
       *regaddr = ~GPIO_SEMCR0_SEM_MUTEX;
     }
     position++;

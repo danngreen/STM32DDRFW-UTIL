@@ -1854,6 +1854,36 @@ static int32_t set_reg(reg_type type, uintptr_t param)
 }
 
 /**
+  * @brief  Check if the CID filtering for DDR controller is enabled
+  * @param  None
+  * @retval true if enabled, false else
+  */
+bool is_ddr_cid_filtering_enabled(void)
+{
+  return (RCC->R[RCC_LOCALRES_104].CIDCFGR & RCC_RxCIDCFGR_CFEN) == RCC_RxCIDCFGR_CFEN;
+}
+
+/**
+  * @brief  Enable CID filtering for the DDR controller
+  * @param  None
+  * @retval None
+  */
+void ddr_enable_cid_filtering(void)
+{
+  SET_BIT(RCC->R[RCC_LOCALRES_104].CIDCFGR, RCC_RxCIDCFGR_CFEN);
+}
+
+/**
+  * @brief  Disable CID filtering for the DDR controller
+  * @param  None
+  * @retval None
+  */
+void ddr_disable_cid_filtering(void)
+{
+  CLEAR_BIT(RCC->R[RCC_LOCALRES_104].CIDCFGR, RCC_RxCIDCFGR_CFEN);
+}
+
+/**
   * @brief  Generic waiting function for self-refresh entry/exit
   * @param  is_entry transition (self-refresh entry or exit)
   * @retval 0 if success, error code else
@@ -1971,8 +2001,20 @@ static int32_t ssr_entry(bool standby)
 
   if (standby)
   {
+    bool cid_filtering = is_ddr_cid_filtering_enabled();
+
     /* Enable IO retention */
+    if (cid_filtering)
+    {
+      ddr_disable_cid_filtering();
+    }
+
     CLEAR_BIT(PWR->CR11, PWR_CR11_DDRRETDIS);
+
+    if (cid_filtering)
+    {
+      ddr_enable_cid_filtering();
+    }
   }
 
   SET_BIT(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPEN);
@@ -2163,8 +2205,6 @@ static int32_t stdby_sr_hsr_entry(void)
 static int32_t sr_hsr_exit(void)
 {
   WRITE_REG(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPLPEN | RCC_DDRCPCFGR_DDRCPEN);
-
-  /* TODO: check if sr_exit_loop() is needed here */
 
   return 0;
 }
@@ -2370,11 +2410,11 @@ static int32_t wait_refresh_update_done_ack(void)
   rfshctl3 = READ_REG(DDRC->RFSHCTL3);
   if ((rfshctl3 & refresh_update_level) == refresh_update_level)
   {
-    SET_BIT(DDRC->RFSHCTL3, refresh_update_level);
+    CLEAR_BIT(DDRC->RFSHCTL3, refresh_update_level);
   }
   else
   {
-    CLEAR_BIT(DDRC->RFSHCTL3, refresh_update_level);
+    SET_BIT(DDRC->RFSHCTL3, refresh_update_level);
     refresh_update_level = 0U;
   }
 
@@ -2388,7 +2428,7 @@ static int32_t wait_refresh_update_done_ack(void)
     {
       return -1;
     }
-  } while ((rfshctl3 & DDRC_RFSHCTL3_REFRESH_UPDATE_LEVEL) !=
+  } while ((rfshctl3 & DDRC_RFSHCTL3_REFRESH_UPDATE_LEVEL) ==
            refresh_update_level);
 
   return 0;
@@ -3039,8 +3079,8 @@ HAL_StatusTypeDef HAL_DDR_Init(DDR_InitTypeDef *iddr)
 {
   int32_t iret  = -1;
   uint32_t uret;
-  uint32_t ddr_retdis;
   HAL_DDR_SelfRefreshModeTypeDef mode;
+  bool cid_filtering = is_ddr_cid_filtering_enabled();
 
   iddr->self_refresh = false;
 
@@ -3126,20 +3166,6 @@ HAL_StatusTypeDef HAL_DDR_Init(DDR_InitTypeDef *iddr)
     return HAL_ERROR;
   }
 
-  /* Check DDR PHY pads retention */
-  ddr_retdis = READ_REG(PWR->CR11) & PWR_CR11_DDRRETDIS;
-  if (iddr->self_refresh)
-  {
-    if (ddr_retdis == PWR_CR11_DDRRETDIS)
-    {
-      iddr->self_refresh = false;
-    }
-  }
-
-  if (!iddr->self_refresh)
-  {
-    SET_BIT(PWR->CR11, PWR_CR11_DDRRETDIS);
-  }
 
 #ifdef DDR_INTERACTIVE
 start:
@@ -3164,8 +3190,8 @@ start:
 
     /* Disable IO retention */
     SET_BIT(PWR->CR11, PWR_CR11_DDRRETDIS);
-
     ddr_delay_us(DDR_DELAY_1_US);
+
     CLEAR_BIT(RCC->DDRCAPBCFGR, RCC_DDRCAPBCFGR_DDRCAPBRST);
     ddr_delay_us(DDR_DELAY_1_US);
 
@@ -3216,8 +3242,48 @@ start:
 
   if (!iddr->wakeup_from_standby)
   {
+    uint32_t ddr_retdis;
+
+    /* Check DDR PHY pads retention */
+    if (cid_filtering)
+    {
+      ddr_disable_cid_filtering();
+    }
+
+    ddr_retdis = READ_REG(PWR->CR11) & PWR_CR11_DDRRETDIS;
+
+    if (cid_filtering)
+    {
+      ddr_enable_cid_filtering();
+    }
+
+    if (iddr->self_refresh)
+    {
+      if (ddr_retdis == PWR_CR11_DDRRETDIS)
+      {
+        iddr->self_refresh = false;
+      }
+    }
+
+    if (!iddr->self_refresh)
+    {
+      if (cid_filtering)
+      {
+        ddr_disable_cid_filtering();
+      }
+
+      SET_BIT(PWR->CR11, PWR_CR11_DDRRETDIS);
+      ddr_delay_us(DDR_DELAY_1_US);
+
+      if (cid_filtering)
+      {
+        ddr_enable_cid_filtering();
+      }
+    }
+
     /* DDR core and PHY reset de-assert */
     CLEAR_BIT(RCC->DDRITFCFGR, RCC_DDRITFCFGR_DDRRST);
+    ddr_delay_us(DDR_DELAY_1_US);
 
     if (disable_refresh() != 0)
     {

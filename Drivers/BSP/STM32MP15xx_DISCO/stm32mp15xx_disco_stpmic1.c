@@ -926,6 +926,9 @@ void STPMU1_Regulator_Enable(PMIC_RegulId_TypeDef id)
   regul_struct *regul = STPMU1_Get_Regulator_Data(id);
 
   STPMU1_Register_Update(regul->control_reg,BIT(0),BIT(0));
+
+  /* Default ramp delay of 1ms */
+  HAL_Delay(1);
 }
 
 void STPMU1_Regulator_Disable(PMIC_RegulId_TypeDef id)
@@ -933,6 +936,9 @@ void STPMU1_Regulator_Disable(PMIC_RegulId_TypeDef id)
   regul_struct *regul = STPMU1_Get_Regulator_Data(id);
 
   STPMU1_Register_Update(regul->control_reg,0,BIT(0));
+
+  /* Default ramp delay of 1ms */
+  HAL_Delay(1);
 }
 
 uint8_t STPMU1_Is_Regulator_Enabled(PMIC_RegulId_TypeDef id)

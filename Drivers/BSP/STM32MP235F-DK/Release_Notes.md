@@ -28,16 +28,16 @@ From project settings points of view, user has only to add the necessary driverâ
 
 ::: {.collapse}
 <input type="checkbox" id="collapse-section0" checked aria-hidden="true">
-<label for="collapse-section0" aria-hidden="true">__V1.0.0 / 11-Oct-2024__</label>
+<label for="collapse-section0" aria-hidden="true">__V1.2.0 / 30-May-2025__</label>
 <div>			
 
 ## Main Changes
 
-**v1.0.0 release** of STMP32MP235F-DK BSP
+**v1.2.0 release** of STMP32MP235F-DK BSP
 
 ## Contents
 
-- Initial Version.
+- Mass market of STMP32MP235F-DK.
 
 
 ## Notes
@@ -46,7 +46,6 @@ stm32mp235f_disco_conf_template.h file must be copied in user application as >st
 
 </div>
 :::
-
 
 :::
 :::

@@ -1126,25 +1126,25 @@ HAL_StatusTypeDef HAL_DMA_ReleaseChannelSemaphore(DMA_HandleTypeDef *hdma);
 
 #if defined CORTEX_IN_SECURE_STATE
 #define IS_DMA_ATTRIBUTES(ATTRIBUTE)  \
-		  (((((ATTRIBUTE) & DMA_CHANNEL_INVALID_ATTR_VALUE_MASK) == 0U)                                       && \
-     		(((ATTRIBUTE) & DMA_CHANNEL_VALID_ATTR_VALUE_MASK) != 0U))                                         ? \
-		    ((((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT) == DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT)   || \
-		     (((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_STATIC_SELECT ) == DMA_CHANNEL_ATTR_CID_STATIC_SELECT)    || \
-		     (((ATTRIBUTE) & DMA_CHANNEL_CID_DISABLE            ) == DMA_CHANNEL_CID_DISABLE)               || \
-    	     (((ATTRIBUTE) & DMA_CHANNEL_ATTR_SEC_MASK          ) == DMA_CHANNEL_ATTR_SEC_MASK)             || \
-		     (((ATTRIBUTE) & DMA_CHANNEL_ATTR_SEC_SRC_MASK      ) == DMA_CHANNEL_ATTR_SEC_SRC_MASK)         || \
-		     (((ATTRIBUTE) & DMA_CHANNEL_ATTR_SEC_DEST_MASK     ) == DMA_CHANNEL_ATTR_SEC_DEST_MASK)        || \
-		     (((ATTRIBUTE) & DMA_CHANNEL_ATTR_PRIV_MASK         ) == DMA_CHANNEL_ATTR_PRIV_MASK))            : \
-		    RESET)
+            (((((ATTRIBUTE) & DMA_CHANNEL_INVALID_ATTR_VALUE_MASK) == 0U)                                       && \
+            (((ATTRIBUTE) & DMA_CHANNEL_VALID_ATTR_VALUE_MASK) != 0U))                                         ? \
+            ((((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT) == DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT)   || \
+            (((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_STATIC_SELECT ) == DMA_CHANNEL_ATTR_CID_STATIC_SELECT)    || \
+            (((ATTRIBUTE) & DMA_CHANNEL_CID_DISABLE            ) == DMA_CHANNEL_CID_DISABLE)               || \
+            (((ATTRIBUTE) & DMA_CHANNEL_ATTR_SEC_MASK          ) == DMA_CHANNEL_ATTR_SEC_MASK)             || \
+            (((ATTRIBUTE) & DMA_CHANNEL_ATTR_SEC_SRC_MASK      ) == DMA_CHANNEL_ATTR_SEC_SRC_MASK)         || \
+            (((ATTRIBUTE) & DMA_CHANNEL_ATTR_SEC_DEST_MASK     ) == DMA_CHANNEL_ATTR_SEC_DEST_MASK)        || \
+            (((ATTRIBUTE) & DMA_CHANNEL_ATTR_PRIV_MASK         ) == DMA_CHANNEL_ATTR_PRIV_MASK))            : \
+              RESET)
 #else
 #define IS_DMA_ATTRIBUTES(ATTRIBUTE)  \
-		  (((((ATTRIBUTE) & DMA_CHANNEL_INVALID_ATTR_VALUE_MASK) == 0U)                                       && \
-		    (((ATTRIBUTE) & DMA_CHANNEL_VALID_ATTR_VALUE_MASK) != 0U))                                        ? \
-           ((((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT) == DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT)   || \
+            (((((ATTRIBUTE) & DMA_CHANNEL_INVALID_ATTR_VALUE_MASK) == 0U)                                       && \
+            (((ATTRIBUTE) & DMA_CHANNEL_VALID_ATTR_VALUE_MASK) != 0U))                                        ? \
+            ((((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT) == DMA_CHANNEL_ATTR_CID_DYNAMIC_SELECT)   || \
             (((ATTRIBUTE) & DMA_CHANNEL_ATTR_CID_STATIC_SELECT ) == DMA_CHANNEL_ATTR_CID_STATIC_SELECT)    || \
             (((ATTRIBUTE) & DMA_CHANNEL_CID_DISABLE            ) == DMA_CHANNEL_CID_DISABLE)               || \
             (((ATTRIBUTE) & DMA_CHANNEL_ATTR_PRIV_MASK         ) == DMA_CHANNEL_ATTR_PRIV_MASK))            : \
-		    RESET)
+              RESET)
 #endif /* CORTEX_IN_SECURE_STATE */
 
 #if defined CORTEX_IN_SECURE_STATE

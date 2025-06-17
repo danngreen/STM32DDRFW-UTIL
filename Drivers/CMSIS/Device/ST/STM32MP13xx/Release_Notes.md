@@ -37,8 +37,59 @@ They can be adapted to fit applications requirements:
 # __Update History__
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section0" checked aria-hidden="true">
-<label for="collapse-section0" checked aria-hidden="true">__V1.1.0 / 23-Feb-2024__</label>
+<input type="checkbox" id="collapse-section11" checked aria-hidden="true">
+<label for="collapse-section11" checked aria-hidden="true">__V1.3.0 / 21-Feb-2024__</label>
+<div>
+
+## Main Changes
+
+This release is the **Maintenance DV of Bit and registers definition** for STM32MP13xx
+
+## Contents
+- Updated CMSIS Core to v5.9.0 - Tag: v5.9.0_fix_620_dsp_v1.10.0_nn_v3.1.0
+- USBH EHCI host only CMSIS definitions added
+
+## Known Limitations
+
+- None
+
+## Dependencies
+
+None
+
+</div>
+:::
+
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section10" aria-hidden="true">
+<label for="collapse-section10" checked aria-hidden="true">__V1.2.0 / 30-Oct-2024__</label>
+<div>
+
+## Main Changes
+
+This release is the **Maintenance DV of Bit and registers definition** for STM32MP13xx
+
+## Contents
+- IAR startup files added for all part numbers
+- Minor bug fixes for various part numbers for GCC and IAR
+- ADC peripheral definitions for MP133 fixed
+
+## Known Limitations
+
+- None
+
+## Dependencies
+
+None
+
+</div>
+:::
+
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section9" aria-hidden="true">
+<label for="collapse-section9" checked aria-hidden="true">__V1.1.0 / 23-Feb-2024__</label>
 <div>
 
 ## Main Changes

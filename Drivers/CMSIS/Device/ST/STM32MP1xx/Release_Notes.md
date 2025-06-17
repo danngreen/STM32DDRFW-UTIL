@@ -37,7 +37,37 @@ Various template file are provided to easily build an application. They can be a
 
 ::: {.collapse}
 <input type="checkbox" id="collapse-section0" checked aria-hidden="true">
-<label for="collapse-section0" checked aria-hidden="true">__V1.6.0 / 02-June-2022__</label>
+<label for="collapse-section0" checked aria-hidden="true">__V1.7.0 / 14-Feb-2025__</label>
+<div>
+
+## Main Changes
+
+This is a **Maintenance release** for STM32MP15xx CMSIS
+
+## Contents
+
+- Update bit definition in header files:
+  - ADC : Add missing registers & Update bitfield names
+  - DMA : Fix missing interrupts used in UART
+- Fixes in startup and linker files
+  - Added default clock values in system files
+  - Linker files aligned with GCC12
+  - Fixed declaration of g_pfnVectors size in gcc/startup files
+
+## Known Limitations
+
+None
+
+## Dependencies
+
+None
+
+</div>
+:::
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section7" aria-hidden="true">
+<label for="collapse-section7" checked aria-hidden="true">__V1.6.0 / 02-June-2022__</label>
 <div>
 
 ## Main Changes

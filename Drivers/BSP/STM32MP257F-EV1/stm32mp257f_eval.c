@@ -697,6 +697,15 @@ int32_t BSP_COM_Init(COM_TypeDef COM, COM_InitTypeDef *COM_Init)
 {
   int32_t ret = BSP_ERROR_NONE;
 
+  /*
+   * Suppose power supplies are present for all vddiox.
+   * Set bits to 1 so that the corresponding GPIOs can be used.
+   */
+  PWR->CR1 |= PWR_CR1_VDDIO3SV;
+  PWR->CR1 |= PWR_CR1_VDDIO4SV;
+  PWR->CR7 |= PWR_CR7_VDDIO2SV;
+  PWR->CR8 |= PWR_CR8_VDDIO1SV;
+
   if (COM >= COMn)
   {
     ret = BSP_ERROR_WRONG_PARAM;
