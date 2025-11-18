@@ -132,6 +132,12 @@ void Mon_A35SystemClockConfig( void )
 
    volatile uint32_t reg32_val;
 
+#ifdef STM32MP21xxxx
+   /* Enable DBGMCU clock before accessing registers */
+   WRITE_REG(RCC->DBGCFGR,
+             READ_REG(RCC->DBGCFGR)|RCC_DBGCFGR_DBGMCUEN);
+#endif /* STM32MP21xxxx */
+
    /* Start Secure Timestamp Generator (STGEN) */
    /* (clock source of A35 secure/non-secure physical timers) */
    /* by assuming its source clock is HSI at 32MHz/64MHz : */
@@ -179,7 +185,7 @@ static uint32_t SystemClock_Config(void)
 
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable oscillators.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 
@@ -245,8 +251,7 @@ static uint32_t SystemClock_Config(void)
 
   if (HAL_RCCEx_CA35SS_PLL1Config(&RCC_Pll1InitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable PLL1.\n\r", __func__);
-    printf("%s: Staying on external clock.\n\r", __func__);
+    printf("%s error. Staying on external clock.\n\r", __func__);
     while (1);
   }
 
@@ -255,31 +260,31 @@ static uint32_t SystemClock_Config(void)
 
   if (HAL_RCCEx_PLL4Config(&RCC_Pll4InitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable PLL4.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 
   if (HAL_RCCEx_PLL5Config(&RCC_Pll5InitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable PLL5.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 
   if (HAL_RCCEx_PLL6Config(&RCC_Pll6InitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable PLL6.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 
   if (HAL_RCCEx_PLL7Config(&RCC_Pll7InitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable PLL7.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 
   if (HAL_RCCEx_PLL8Config(&RCC_Pll8InitStruct) != HAL_OK)
   {
-    printf("%s: Failed to enable PLL8.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 
@@ -314,7 +319,7 @@ static uint32_t SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, 0) != HAL_OK)
   {
-   printf("%s: Failed to configure bus clocks.\n\r", __func__);
+    printf("%s error\n\r", __func__);
     while (1);
   }
 

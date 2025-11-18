@@ -68,6 +68,8 @@
 #define CMD_SETBITS_IN_DATA               0x5B54DA7AUL
 #define GICD_IGROUPR0                     0x4AC10080UL
 #define SCR_EL3_REG                       0x31620C11UL
+#define CNTFRQ_EL0_REG                    0x2612C0B0UL
+#define CMD_WRITE_SYSREG     			  0x97AAD00FUL
 #define UNUSED_PARAM                      0xDEAFC0DEUL
 
 #if 0 /* TO BE IMPLEMENTED IN Aarch32 & Aarch64 */
@@ -106,6 +108,10 @@ uint32_t a35_get_core_id( void );
 uint32_t a35ns_call_el3_monitor( uint32_t a_command, uint32_t a_param1, 
                                  uint32_t a_param2, uint32_t a_param3 );
 #endif /* defined(A35_NON_SECURE) */
+#if defined(GTIM_CNTFREQ_SYNC_ENABLE)
+uint32_t a35_set_cntfrq( uint32_t a_command, uint32_t a_param1,
+                                 uint32_t a_param2, uint32_t a_param3 );
+#endif /* GTIM_CNTFREQ_SYNC_ENABLE */
 /* - cache management */
 bool_t   a35_instruction_cache_is_enable( void );
 void     a35_enable_data_cache( void );
@@ -118,7 +124,9 @@ bool_t   a35_memory_unit_is_enable( void );
 /* - processor state management */
 #ifdef __AARCH64__
 uint32_t a35_aa64_get_current_el( void );
-#endif /* __AARCH64__ */
+#else /* __AARCH64__ */
+uint32_t a35_aa32_get_current_mode( void );
+#endif
 uint32_t a35_get_sctlr( void );
 void     a35_set_sctlr( uint32_t a_sctlr_val );
 

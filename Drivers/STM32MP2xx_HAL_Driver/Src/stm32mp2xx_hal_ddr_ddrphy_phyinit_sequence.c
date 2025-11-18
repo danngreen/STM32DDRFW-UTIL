@@ -137,7 +137,11 @@ int32_t ddrphy_phyinit_sequence(bool skip_training, bool reten)
   if (reten)
   {
     /* Save value of tracked registers for retention restore sequence. */
-    ret = ddrphy_phyinit_usercustom_saveretregs();
+    /*
+     * Following call has been dissociated from PHY init sequence.
+     * A dedicated HAL_DDR_SaveRetentionData() is now exposed in HAL driver API.
+     */
+    /* ret = ddrphy_phyinit_usercustom_saveretregs(); */
     if (ret != 0)
     {
       return ret;

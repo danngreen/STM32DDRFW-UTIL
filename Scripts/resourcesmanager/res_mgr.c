@@ -420,16 +420,24 @@ static ResMgr_Status_t GetBaseAddrRIF(ResMgr_data_info_t *rif_info, uint8_t res_
 uint8_t SecureState;
 uint32_t GetCoreMode(void)
 {
-#if defined (CORE_CM33)
-#if defined (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+#if defined (CORE_CA35)
+  uint32_t mode = __get_CPSR() & CPSR_M_Msk;
   SecureState = CPU_SECURE;
-#else
-  SecureState = CPU_UNSECURE;
-#endif
-  if((__get_CONTROL() & 0x01) == THREAD_MODE_PRIVILEGED)
-        return THREAD_MODE_PRIVILEGED;
+  if (mode == CPSR_M_USR) {
+    return THREAD_MODE_UNPRIVILEGED;
+  } else {
+    return THREAD_MODE_PRIVILEGED;
+  }
+#elif defined (CORE_CM33)
+  #if defined (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
+    SecureState = CPU_SECURE;
+  #else
+    SecureState = CPU_UNSECURE;
+  #endif
+  if ((__get_CONTROL() & 0x01) == THREAD_MODE_PRIVILEGED)
+    return THREAD_MODE_PRIVILEGED;
   else
-        return THREAD_MODE_UNPRIVILEGED;
+    return THREAD_MODE_UNPRIVILEGED;
 #elif defined (CORE_CM0PLUS)
   SecureState = CPU_UNSECURE;
   return THREAD_MODE_UNPRIVILEGED;
@@ -711,9 +719,9 @@ ResMgr_Status_t ResMgr_Request(ResMgr_Res_Type_t res_type, uint8_t res_num)
       {
         /* CPUx is not in white list       */
 #ifdef __AARCH64__
-        printf("[ERROR]: %s: CPU%x is not in SEM white list - Res num = %d\n\r", __func__, CPUSEMCID(semcid), res_num);
+        printf("[ERROR]: %s: CPU%x is not in SEM white list - Res num = %d\n\r", __func__, CPUSCID(scid), res_num);
 #else /* __AARCH64__ */
-        printf("[ERROR]: %s: CPU%lx is not in SEM white list - Res num = %d\n\r", __func__, CPUSEMCID(semcid), res_num);
+        printf("[ERROR]: %s: CPU%lx is not in SEM white list - Res num = %d\n\r", __func__, CPUSCID(scid), res_num);
 #endif /* __AARCH64__ */
         /* return a KO access response to caller */
         return (RESMGR_STATUS_CID_WL_ACCESS_ERROR);
@@ -725,9 +733,9 @@ ResMgr_Status_t ResMgr_Request(ResMgr_Res_Type_t res_type, uint8_t res_num)
         {
           /* return(ResMgr_Get_SemTake(res_num, RIF_CID_MPU, ISOLATION_SEM_WAIT_TIMEOUT_VAL)); */
 #ifdef __AARCH64__
-          printf("[ERROR]: %s: SEM for CPU%x is already taken - Res num = %d\n\r", __func__, CPUSEMCID(semcid), res_num);
+          printf("[ERROR]: %s: SEM for CPU%x is already taken - Res num = %d\n\r", __func__, CPUSCID(scid), res_num);
 #else /* __AARCH64__ */
-          printf("[ERROR]: %s: SEM for CPU%lx is already taken - Res num = %d\n\r", __func__, CPUSEMCID(semcid), res_num);
+          printf("[ERROR]: %s: SEM for CPU%lx is already taken - Res num = %d\n\r", __func__, CPUSCID(scid), res_num);
 #endif /* __AARCH64__ */
           return RESMGR_STATUS_SEM_ACCESS_ERROR;
         }

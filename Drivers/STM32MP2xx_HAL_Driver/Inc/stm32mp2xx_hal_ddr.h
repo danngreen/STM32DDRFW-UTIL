@@ -338,6 +338,34 @@ typedef enum
 #endif /* DDR_INTERACTIVE */
 
 /**
+  * @brief  HAL DDR impedance value definition
+  */
+#ifdef DDR_INTERACTIVE
+#define MAX_TX 6
+extern const uint32_t tx_ohms[];
+#define MAX_ODT 17
+extern const uint32_t odt_ohms[];
+#if STM32MP_DDR3_TYPE
+#define MAX_RTTNOM 6
+extern const uint32_t rttnom_ohms[];
+#define MAX_RON 2
+extern const uint32_t ron_ohms[];
+#endif /* STM32MP_DDR3_TYPE */
+#if STM32MP_DDR4_TYPE
+#define MAX_RTTNOM 8
+extern const uint32_t rttnom_ohms[];
+#define MAX_ODI 2
+extern const uint32_t odi_ohms[];
+#endif /* STM32MP_DDR4_TYPE */
+#if STM32MP_LPDDR4_TYPE
+#define MAX_DQODT 7
+extern const uint32_t dqodt_ohms[];
+#define MAX_PDDS 6
+extern const uint32_t pdds_ohms[];
+#endif /* STM32MP_LPDDR4_TYPE */
+#endif /* DDR_INTERACTIVE */
+
+/**
   * @brief  DDR Initialization Structure definition
   */
 typedef struct
@@ -401,14 +429,19 @@ HAL_StatusTypeDef HAL_DDR_SR_Exit(void);
 HAL_StatusTypeDef HAL_DDR_SR_SetMode(HAL_DDR_SelfRefreshModeTypeDef mode);
 HAL_DDR_SelfRefreshModeTypeDef HAL_DDR_SR_ReadMode(void);
 HAL_StatusTypeDef HAL_DDR_SetRetentionAreaBase(uint64_t base);
+HAL_StatusTypeDef HAL_DDR_SaveRetentionData(void);
 
 #ifdef DDR_INTERACTIVE
 void HAL_DDR_Convert_Case(const char *in_str, char *out_str, bool ToUpper);
 bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step);
 HAL_StatusTypeDef HAL_DDR_Dump_Param(HAL_DDR_ConfigTypeDef *config,
                                      const char *name);
+HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
+                                     const char *name);
 HAL_StatusTypeDef HAL_DDR_Dump_Reg(const char *name, bool save);
 void HAL_DDR_Edit_Param(HAL_DDR_ConfigTypeDef *config, char *name,
+                        char *string);
+void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
                         char *string);
 void HAL_DDR_Edit_Reg(char *name, char *string);
 #endif /* DDR_INTERACTIVE */

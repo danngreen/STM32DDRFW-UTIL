@@ -59,4 +59,7 @@ uint32_t DDR_Test_Infinite_write(unsigned long pattern_in,
 uint32_t DDR_Test_Infinite_read(unsigned long pattern_in,
                                 unsigned long addr_in);
 #endif
+uint32_t DDR_Test_TXComputeDelayMargins(void);
+uint32_t DDR_Test_RXComputeDelayMargins(void);
+
 #endif /* __DDR_TESTS_H */

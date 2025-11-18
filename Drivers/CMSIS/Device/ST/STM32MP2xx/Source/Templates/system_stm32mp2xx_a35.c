@@ -75,6 +75,7 @@
 #include "irq_ctrl.h"
 #include "system_stm32mp2xx.h"
 #include "system_stm32mp2xx_a35_utils.h"
+#include <stdbool.h>
 
 /**
   * @}
@@ -99,6 +100,19 @@ typedef struct interrupt_infos
 /** @addtogroup STM32MP2xx_System_Private_Defines
   * @{
   */
+#if __AARCH64__
+/* These defines are associated to returned value
+ * of 64bit system register [currentEL]  : Exception Levels */
+#define A35_CORE_EL0_VALUE   0x0
+#define A35_CORE_EL1_VALUE   0x1
+#define A35_CORE_EL2_VALUE   0x2
+#define A35_CORE_EL3_VALUE   0x3
+#else
+/* These defines are associated to returned value
+ * of 32bit system register [CPSR] :  Processor Modes */
+#define A35_CORE_SUPERVISOR_MODE_VALUE  0x3
+#define A35_CORE_MONITOR_MODE_VALUE     0x6
+#endif
 /* These defines are associated to GIC400 */
 #define GIC_HIGHEST_INTERRUPT_VALUE 1020
 #define GIC_HIGHEST_SGI_PPI_VALUE     31
@@ -980,8 +994,12 @@ void SecurePhysicalTimer_IRQHandler(void)
 #else
    PL1_SetLoadValue(TimerPeriod + PL1_GetCurrentValue());
 #endif
+
+#ifndef USE_FULL_LL_DRIVER
    /* Increment Tick value and call user CB */
    HAL_IncTick();
+#endif /* USE_FULL_LL_DRIVER */
+
    SecurePhysicalTimer_IRQHandler_CallBack();
 #ifdef DEBUG_PPI2x
    /* Debug mode : Increment PPI29 counter */
@@ -1017,8 +1035,12 @@ void NonSecurePhysicalTimer_IRQHandler(void)
 #else
    PL1_SetLoadValue(TimerPeriod + PL1_GetCurrentValue());
 #endif
+
+#ifndef USE_FULL_LL_DRIVER
    /* Increment Tick value and call user CB */
    HAL_IncTick();
+#endif /* USE_FULL_LL_DRIVER */
+
    NonSecurePhysicalTimer_IRQHandler_CallBack();
 
 #ifdef DEBUG_PPI2x
@@ -1052,8 +1074,12 @@ void VirtualTimer_IRQHandler(void)
 #else
    VL1_SetCurrentTimerValue(TimerPeriod + VL1_GetCurrentTimerValue());
 #endif
+
+#ifndef USE_FULL_LL_DRIVER
    /* Increment Tick value and call user CB */
    HAL_IncTick();
+#endif /* USE_FULL_LL_DRIVER */
+
    VirtualTimer_IRQHandler_CallBack();
 
 #ifdef DEBUG_PPI2x
@@ -1116,6 +1142,21 @@ uint32_t SystemA35_TZ_STGEN_Start( uint32_t ck_ker_clk_freq )
 {
    uint32_t reg_val;
 
+  #if defined(STM32MP21xxxx)
+    bool clock_set = false;
+  #endif
+
+    /* CHECK SECURE STATE : NOT IMPLEMENTED YET ! */
+
+  #if defined(STM32MP21xxxx)
+    if ((READ_REG(RCC->DBGCFGR) & RCC_DBGCFGR_DBGMCUEN) == 0U)
+    {
+      /* Enable DBGMCU clock before accessing registers */
+      WRITE_REG(RCC->DBGCFGR,
+                READ_REG(RCC->DBGCFGR) | RCC_DBGCFGR_DBGMCUEN);
+      clock_set = true;
+    }
+  #endif /* STM32MP21xxxx */
    /* CHECK SECURE STATE : NOT IMPLEMENTED YET ! */
 
    /* Start Timestamp generator */
@@ -1143,6 +1184,12 @@ uint32_t SystemA35_TZ_STGEN_Start( uint32_t ck_ker_clk_freq )
       reg_val = STGENC->CNTCR | 0x3;
       STGENC->CNTCR = reg_val;
    }
+  #if defined(STM32MP21xxxx)
+   if (clock_set)
+   {  /* Disable DBGMCU clock after accessing registers */
+      WRITE_REG(RCC->DBGCFGR,READ_REG(RCC->DBGCFGR) & ~RCC_DBGCFGR_DBGMCUEN);
+   }
+  #endif /* STM32MP21xxxx */
    return 0;
 }
 
@@ -1364,7 +1411,28 @@ uint32_t SystemA35_SYSTICK_Config( uint32_t timer_priority )
 #endif /* defined(A35_NON_SECURE) */
    if (__get_CNTFRQ() != ref_freq_val)
    {
-      PL1_SetCounterFrequency(ref_freq_val);
+#if __AARCH64__
+       /* Check for El3 exception Level */
+       if(a35_aa64_get_current_el() == A35_CORE_EL3_VALUE)
+#else
+       /* Check for Monitor Mode */
+       if(a35_aa32_get_current_mode() == A35_CORE_MONITOR_MODE_VALUE)
+#endif
+       {
+          PL1_SetCounterFrequency(ref_freq_val);
+       } else
+       {
+#ifdef GTIM_CNTFREQ_SYNC_ENABLE
+          a35_set_cntfrq(CMD_WRITE_SYSREG, CNTFRQ_EL0_REG, ref_freq_val, UNUSED_PARAM);
+#else /* GTIM_CNTFREQ_SYNC_ENABLE */
+          /* Incorrect PE Timer counter Frequency for fast reference */
+          /* Error Handling */
+          while(1)
+          {
+
+          }
+#endif
+       }
    }
    /* Initialize Timer to get a 1ms-period */
    TimerPeriod = ref_freq_val / 1000;

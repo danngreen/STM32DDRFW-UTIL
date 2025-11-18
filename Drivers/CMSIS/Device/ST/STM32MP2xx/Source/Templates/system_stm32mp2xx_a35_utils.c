@@ -105,14 +105,36 @@ uint32_t a35ns_call_el3_monitor( uint32_t a_command, uint32_t a_param1,
    asm volatile("SMC  #2");
 #ifndef __AARCH64__
    asm volatile("MOV    %0, r0" : "=r" (status) : : );
-   asm volatile("MOV    %0, r1" : "=r" (a_param1) : : );
-   asm volatile("MOV    %0, r2" : "=r" (a_param2) : : );
-   asm volatile("MOV    %0, r3" : "=r" (a_param3) : : );
 #endif /* __AARCH64__ */
 
    return status;   
 }
 #endif /* defined(A35_NON_SECURE) */
+
+
+#if defined(GTIM_CNTFREQ_SYNC_ENABLE)
+uint32_t a35_set_cntfrq( uint32_t a_command, uint32_t a_param1,
+                                 uint32_t a_param2, uint32_t a_param3 )
+{
+   uint32_t status;
+
+#ifndef __AARCH64__
+   asm volatile("MOV    r0, %0" : : "r" (a_command));
+   asm volatile("MOV    r1, %0" : : "r" (a_param1));
+   asm volatile("MOV    r2, %0" : : "r" (a_param2));
+   asm volatile("MOV    r3, %0" : : "r" (a_param3));
+#endif /* __AARCH64__ */
+
+   /* Secure monitor call :  To Set a PE counter Frequency at El3 Level */
+   asm volatile("SMC #0");
+
+#ifndef __AARCH64__
+   asm volatile("MOV    %0, r0" : "=r" (status) : : );
+#endif /* __AARCH64__ */
+
+   return status;
+}
+#endif /* GTIM_CNTFREQ_SYNC_ENABLE */
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -296,7 +318,18 @@ uint32_t a35_aa64_get_current_el( void )
    /* Extract EL, bits [3:2] */
    return(reg_val>>2);
 }
-#endif /* __AARCH64__ */
+#else  /* __AARCH64__ */
+uint32_t a35_aa32_get_current_mode( void )
+{
+   uint32_t reg_val;
+
+   /* Get Current Exception Level in Aarch32     */
+   /* (see #G8.2.34 in [ARM DDI 0487K_a]) */
+   asm volatile("MRS %0, cpsr" : "=r" (reg_val));
+   /* Extract EL, bits [3:0] */
+   return(reg_val & 0xF);
+}
+#endif
 
 
 uint32_t a35_get_sctlr( void )

@@ -59,7 +59,10 @@ __MEM_START__ = ORIGIN(RAM);
 __MEM_SIZE__  = LENGTH(RAM);
 
 /* put the EL3 stack at the end of the memory */
-EL3_STACK_BASE = __MEM_START__ + __MEM_SIZE__;
+__EL3_STACK_SIZE = 0x400;
+Heap_Size = 0x200;     /* required amount of heap  */
+
+EL3_STACK_BASE = __MEM_START__ + __MEM_SIZE__ - __EL3_STACK_SIZE;
 
 SECTIONS
 {
@@ -98,5 +101,17 @@ SECTIONS
         __end   = .;
         __end__ = .;
         PROVIDE (end = .);
+
+    /* User_heap_stack section, used to check that there is enough RAM left */
+    ._user_heap_stack (NOLOAD) :
+    {
+        . = ALIGN(8);
+        PROVIDE ( end = . );
+        PROVIDE ( _end = . );
+        . = . + Heap_Size;
+        . = . + __EL3_STACK_SIZE;
+        . = ALIGN(8);
+    } >RAM
+
 }
 

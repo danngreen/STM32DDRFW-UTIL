@@ -93,7 +93,7 @@ int HAL_DDR_MspInit(__attribute__((unused))ddr_type type)
   /* Use PMIC to set and enable DDR power */
   if (BSP_PMIC_DDR_Power_Init() != BSP_ERROR_NONE)
   {
-    printf("==> STPMIC initialization for DDR power FAILED \n\r");
+    printf("%s error\n\r", __func__);
     return -1;
   }
 #endif /* UTIL_USE_PMIC */

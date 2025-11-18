@@ -39,6 +39,7 @@ typedef enum {
   DDR_CMD_FREQ,
   DDR_CMD_RESET,
   DDR_CMD_PARAM,
+  DDR_CMD_IMPEDANCE,
   DDR_CMD_PRINT,
   DDR_CMD_EDIT,
   DDR_CMD_SAVE,
@@ -66,8 +67,6 @@ typedef struct {
 #define CMD_MAX_LEN 1024
 #define CMD_MAX_ARG 5
 #define DDR_NAME_MAX_LEN 128
-
-static uint32_t DDR_Test_All(uint32_t loop, uint32_t size, uint32_t addr);
 
 const subcmd_desc test[] = {
   {DDR_Test_All, "Test All",
@@ -106,6 +105,10 @@ const subcmd_desc test[] = {
    "test Walking Ones pattern", 3},
   {DDR_Test_WalkingOnes, "Test WalkingOnes", "[size] [loop] [addr]",
    "test Walking Zeroes pattern", 3},
+  {DDR_Test_TXComputeDelayMargins, "Computes TX DQS delay margins", "[none]",
+   "computes TX DQS delay margins with present impedances", 0},
+  {DDR_Test_RXComputeDelayMargins, "Computes RX DQS delay margins", "[none]",
+   "computes RX DQS delay margins with present impedances", 0},
 #ifdef TEST_INFINITE_ENABLE
   {DDR_Test_Infinite_write, "Test infinite write for JEDEC", "[pattern] [addr]",
    "test infinite write pattern", 2},
@@ -130,6 +133,7 @@ const ddr_command ddr_cmd[DDR_CMD_MAX] = {
     [DDR_CMD_FREQ]         = { "freq"       , 0, 1 },
     [DDR_CMD_RESET]        = { "reset"      , 0, 0 },
     [DDR_CMD_PARAM]        = { "param"      , 0, 2 },
+    [DDR_CMD_IMPEDANCE]    = { "impedance"  , 0, 2 },
     [DDR_CMD_PRINT]        = { "print"      , 0, 1 },
     [DDR_CMD_EDIT]         = { "edit"       , 2, 2 },
     [DDR_CMD_SAVE]         = { "save"       , 0, 0 },
@@ -147,15 +151,16 @@ extern HAL_DDR_ConfigTypeDef static_ddr_config;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
-static uint32_t DDR_Test_All(uint32_t loop, uint32_t size, uint32_t addr)
+uint32_t DDR_Test_All(uint32_t loop, uint32_t size, uint32_t addr)
 {
   uint32_t ret = 0;
   int i;
 
+/* Remove TXComputeDelayMargins and RXComputeDelayMargins from "All" list of tests */
 #ifdef TEST_INFINITE_ENABLE
-  for (i = 1; i < (int)test_nb - 2; i++)
+  for (i = 1; i < (int)test_nb - 2 - 2; i++)
 #else
-  for (i = 1; i < (int)test_nb; i++)
+  for (i = 1; i < (int)test_nb - 2; i++)
 #endif
   {
     switch (test[i].max_args)
@@ -192,11 +197,17 @@ static uint32_t DDR_Test_All(uint32_t loop, uint32_t size, uint32_t addr)
 
     if (ret != 0)
     {
-      printf("%s failed [%d]\n\r", test[i].name, ret);
+      if (!silent_console)
+      {
+        printf("%s failed [%d]\n\r", test[i].name, ret);
+      }
       return ret;
     }
 
-    printf("result %d:%s = Passed\n\r", i, test[i].name);
+    if (!silent_console)
+    {
+      printf("result %d:%s = Passed\n\r", i, test[i].name);
+    }
   }
 
   return ret;
@@ -375,6 +386,8 @@ static void print_usage(void)
     "freq  <freq>               changes the DDR PHY frequency\n\r"
     "param [type|reg]           prints input parameters\n\r"
     "param <reg> <val>          edits parameters in step 0\n\r"
+    "impedance [name]           prints impedances\n\r"
+    "impedance <name> <val>     edits impedances in step 0\n\r"
     "print [type|reg]           dumps registers\n\r"
     "edit <reg> <val>           modifies one register\n\r"
     "save                       output formated DDR regs to be saved\n\r"
@@ -417,8 +430,11 @@ static bool check_step(HAL_DDR_InteractStepTypeDef step,
 {
   if (step != expected)
   {
-    printf("invalid step %d:%s expecting %d:%s\n\r",
-           step, step_str[step], expected, step_str[expected]);
+    if (!silent_console)
+    {
+      printf("invalid step %d:%s expecting %d:%s\n\r",
+             step, step_str[step], expected, step_str[expected]);
+    }
     return false;
   }
 
@@ -617,6 +633,34 @@ static void do_param(HAL_DDR_InteractStepTypeDef step, int argc, char *argv[])
   }
 }
 
+static void do_impedance(HAL_DDR_InteractStepTypeDef step, int argc, char *argv[])
+{
+  char name[(argc == 1)? 0 : strlen(argv[0])];
+
+  switch (argc)
+  {
+  case 1:
+    HAL_DDR_Dump_Impedance(&static_ddr_config, NULL);
+    break;
+  case 2:
+    HAL_DDR_Convert_Case(argv[0], name, 1); /* convert to upper case */
+
+    if (HAL_DDR_Dump_Impedance(&static_ddr_config, name) != HAL_OK)
+    {
+      printf("invalid argument %s\n\r", argv[0]);
+    }
+    break;
+  case 3:
+    if (!check_step(step, STEP_DDR_RESET))
+    {
+      return;
+    }
+    HAL_DDR_Convert_Case(argv[0], name, 1); /* convert to upper case */
+    HAL_DDR_Edit_Impedance(&static_ddr_config, name, argv[1]);
+    break;
+  }
+}
+
 static void do_print(int argc, char * const argv[])
 {
   char reg_name[(argc == 1)? 0 : strlen(argv[0])];
@@ -667,7 +711,10 @@ static HAL_DDR_InteractStepTypeDef do_step(HAL_DDR_InteractStepTypeDef step,
                (int)value, step_str[value], step, step_str[step]);
         goto end;
       }
-      printf("step to %d:%s\n\r", (int)value, step_str[value]);
+      if (!silent_console)
+      {
+        printf("step to %d:%s\n\r", (int)value, step_str[value]);
+      }
       return (HAL_DDR_InteractStepTypeDef)value;
   };
 
@@ -786,7 +833,10 @@ static void do_subcmd(int argc, char *argv[], const subcmd_desc *array,
     return;
   }
 
+  if (!silent_console)
+  {
     printf("Result: Pass [%s]\n\r", array[value].name);
+  }
 }
 
 bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
@@ -796,6 +846,7 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
   int argc;
   int cmd;
   static int next_step = -1;
+  bool remote_exit = false;
 
   if ((next_step < 0) && (step == STEP_DDR_RESET))
   {
@@ -815,18 +866,70 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
     return false;
   }
 
-  printf("%d:%s\n\r", step, step_str[step]);
+  if (!silent_console)
+  {
+    printf("%d:%s\n\r", step, step_str[step]);
+  }
 
   if ((HAL_DDR_InteractStepTypeDef)next_step > step)
   {
     return false;
   }
 
-  while ((HAL_DDR_InteractStepTypeDef)next_step == step)
+  while (((HAL_DDR_InteractStepTypeDef)next_step == step) && !remote_exit)
   {
-    get_entry_string(buffer);
+    if (silent_console)
+    {
+      if (back_to_test == 1)
+      {
+        /*
+	 * Test in remote mode has been interrupted.
+	 * Last operation was a step change.
+	 * Now move back to this test.
+	 */
+        argc = 2;
+        cmd = DDR_CMD_TEST;
+        if (save_test_id == 1)
+        {
+          argv[0] = "17\0";
+        }
+        else if (save_test_id == 2)
+        {
+          argv[0] = "18\0";
+        }
+        else
+        {
+          printf("Wrong remote test id [%u]\n\r", save_test_id);
+        }
+        argv[1] = '\0';
+        remote_exit = false;
+        back_to_test = 0;
+      }
+      else
+      {
+        /*
+	 * Test in remote mode has been interrupted.
+	 * Execute the remote command.
+	 * If step change, then prepare to come back to test just after.
+	 */
+        argc = remote_argc;
+        cmd = remote_cmd;
+        argv[0] = remote_argv0;
+        argv[1] = remote_argv1;
+        remote_exit = true;
+	if (cmd == DDR_CMD_STEP)
+        {
+          back_to_test = 1;
+        }
+      }
+    }
+    else
+    {
+      get_entry_string(buffer);
 
-    argc = parse_entry_string(buffer, strlen(buffer), &cmd, argv);
+      argc = parse_entry_string(buffer, strlen(buffer), &cmd, argv);
+    }
+
     if (argc < 0)
     {
       printf("Error [%d]\n\r", argc);
@@ -868,6 +971,10 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
       do_param(step, argc, argv);
       break;
 
+    case DDR_CMD_IMPEDANCE:
+      do_impedance(step, argc, argv);
+      break;
+
     case DDR_CMD_PRINT:
       do_print(argc, argv);
       break;
@@ -898,8 +1005,12 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
       break;
 
     case DDR_CMD_TEST:
-      if (!check_step(step, STEP_DDR_READY))
+      if (!check_step(step, STEP_DDR_READY) && !silent_console)
       {
+        /*
+	 * If a test is executed in remote mode, it is able to change steps and
+	 * come back just after.
+	 */
         continue;
       }
       do_subcmd(argc, argv, test, test_nb);

@@ -9,7 +9,7 @@ This document describes:
 
 ## 1 STM32DDRFW-UTIL Architecture and Design
 
-STM32DDRFW-UTIL v1.3.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
+STM32DDRFW-UTIL v1.4.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
 
 ### 1.1 Package overview
 
@@ -59,9 +59,11 @@ The HAL driver APIs (in stm32mpxxx\_hal\_ddr.c file) provides the functions allo
 |**HAL\_DDR\_ASS\_Set\_Clksrc**   |<ul><li>**brief**<br>Set AXI Sub-System Clock Source</li>***Note:*** *In STM32DDRFW-UTIL firmware, this function is used to switch AXI clock source to a different source, in order to change PLL2 rate when changing DDR frequency. Not present on STM32MP2 series.*<br><li>**param**<br>*clksrc* AXI Sub-System clock source.</li><li>**retval** HAL status.</li></ul>|
 |**HAL\_DDR\_Interactive**   |<ul><li>**brief**<br>Set DDR step and run tool command.<br>User function implemented in ddr\_tool.c</li><li>**param**<br>*step* DDR Interactive mode step.</li><li>**retval** boolean.</li></ul>|
 |**HAL\_DDR\_Dump\_Param**    |<ul><li>**brief**<br>Prints input configuration parameters to be set for all DDR settings. This function will print the setting value from the input configuration parameters provided in the source code and used to initialize the DDR at start.</li><li>**param**<br>*config* static DDR configuration used to initialize the DDR setting name (if NULL, all settings are printed out).</li><li>**retval** HAL status.</li></ul>|
-|**HAL\_DDR\_Dump\_Reg**      |<ul><li>**brief**<br>Dump the DDR setting value. This function will print the actual setting value and format the output print if save parameter is true (to be used after DDR initialization in DDR\_READY step).</li><li>**param**<br>*name* setting name (if NULL, all settings are printed out) save indicates if the output print has to be formatted with “#define …” (true) or not.</li><li>**retval** HAL status.</li></ul>|
 |**HAL\_DDR\_Edit\_Param**    |<ul><li>**brief**<br>Edit input parameter value. This function allows to change the DDR configuration parameters before initialization in DDR\_RESET step.</li><li>**param**<br>*name* setting name.<br>*string* new parameter value.</li><li>**retval** None.</li></ul>|
+|**HAL\_DDR\_Dump\_Reg**      |<ul><li>**brief**<br>Dump the DDR setting value. This function will print the actual setting value and format the output print if save parameter is true (to be used after DDR initialization in DDR\_READY step).</li><li>**param**<br>*name* setting name (if NULL, all settings are printed out) save indicates if the output print has to be formatted with “#define …” (true) or not.</li><li>**retval** HAL status.</li></ul>|
 |**HAL\_DDR\_Edit\_Reg**      |<ul><li>**brief**<br>Edit DDR setting value. This function allows to change DDR settings after DDR\_CTRL\_INIT\_DONE step for DDRC registers and after DDR\_PHY\_INIT\_DONE step for DDRPHY user input parameters </li><li>**param**<br>*name* setting name<br>*string* new parameter value</li><li>**retval** None.</li></ul>|
+|**HAL\_DDR\_Dump\_Impedance**      |<ul><li>**brief**<br>For STM32MP2 series only, dump the impedance value. This function will print the actual value extracted from the active settings.</li>***Note:*** *Not present on STM32MP1 series.*<br><li>**param**<br>*name* impedance name (if NULL, all impedance are printed out).</li><li>**retval** HAL status.</li></ul>|
+|**HAL\_DDR\_Edit\_Impedance**      |<ul><li>**brief**<br>For STM32MP2 series only, edit impedance value. This function allows to change an impedance (i.e. so related DDR configuration parameters)before initialization in DDR\_RESET step.</li>***Note:*** *Not present on STM32MP1 series.*<br><li>**param**<br>*name* impedance name<br>*string* new impedance value</li><li>**retval** None.</li></ul>|
 
 #### 1.2.2 DDR Interactive mode
 
@@ -288,11 +290,12 @@ These templates are available in DDR\_Tool projects. You can also generate a tem
 
 ##### 1.2.4.1 Test description
 
-Tests are classified in the three following types:
+Tests are classified in the four following types:
 
 - **Basic tests:** These simple and running fast tests are intended to capture the major configuration or hardware issues showing off immediately.
 - **Intensive tests:** These tests use extensive coverage of data and address patterns for noise and high SSO conditions, high throughput traffic or interleaved read/write. Depending on the parameters, the test run time may be long. An intensive test can be deployed progressively, with test trial before launching long and exhaustive test sequences.
 - **Stress tests:** These tests are intensive and executed with stretched conditions (such as a small frequency increase 10-20 MHz), with a skew of parameters (for example a fine step delay increase) or with specific frequency selective patterns.
+- **Expert tests:** These algorithms have the objective to give additional information in an advanced level of DDR expertise.
 
 These tests are intended to catch low-margin timings of a configuration that may cause elusive errors and eventual crashes later during run time.
 A stress test campaign must always be done during the system bring-up. Stress tests may also be run in case of suspicious failure. Any test and its skewed parameter must be directed to pinpoint the observed failure (for example, when errors are related to specific bit or byte).
@@ -311,6 +314,15 @@ These tests can only be stopped in Engineering Boot mode execution by:
 
 - breaking the debugger in STM32CubeIDE
 - changing the value of the variable "go\_loop" in "DDR\_Test\_Infinite\_read" and "DDR\_Test\_Infinite\_write" functions (in *ddr\_tests.c* file)
+
+These two tests are not available in STM32CubeMX DDR Test Suite (also mentioned in §3.2.5.2).
+
+
+##### 1.2.4.3 Expert tests (only on STM32MP2 series)
+
+By definition, these expert algorithms are not available in STM32CubeMX DDR Test Suite (also mentioned in §3.2.5.2).
+
+Their objective is to provide a diagnostic on a specific element. They can be executed either with STM32CubeIDE or by flashing generated .stm32 file in the FSBL-A partition of the boot device.
 
 ## 2 How to use STM32DDRFW-UTIL firmware
 
@@ -348,7 +360,7 @@ This section describes how to compile and launch these projects in STM32CubeIDE.
 
 	- <span style="color: red;">Extra procedures <span style="color: blue;">(marked in blue below)</span> must complete nominal ones.</span>
 
-The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 1.19 release</span>.
+The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 2.0 release</span>.
 
 #### 2.2.1 Import the project in STM32CubeIDE
 
@@ -364,13 +376,14 @@ To import a DDR Tool project in STM32CubeIDE, follow these steps:
 
 <span style="color: blue;">(only applicable on STM32MP2 projects)</span>
 
-<span style="color: blue;">A local aarch64 toolchain has to be added in STM32CubeIDE Toolchain Manager and then enabled for the current project. Here are the recommended packages:</span>
+<span style="color: blue;">A local aarch64 toolchain has to be added in STM32CubeIDE Toolchain Manager and then enabled for the current project. They are gathered in the following ARM link: **[arm-gnu-toolchain-downloads](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)**.</span>
 
-- <span style="color: blue;">Windows: **[gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf.tar.xz?revision=09ff6958-8d84-4694-a204-6413888aee5d&rev=a0b1b0bb25cc4bc79ca28c38fce37085&hash=DF8FBD5125F75ACF8FB826795DDC58E7DF330106)**</span>
-- <span style="color: blue;">Linux:</span>
-	- <span style="color: blue;">Ubuntu 20.04: **[gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu/11.2-2022.02/binrel/gcc-arm-11.2-2022.02-x86_64-aarch64-none-elf.tar.xz?rev=981d8f7e91864070a466d852589598e2&hash=8D5397D4E41C99A96989ED813E8E95F0)**</span>
-	- <span style="color: blue;">Ubuntu 22.04: **[arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-elf.tar.xz)**</span>
-	- <span style="color: blue;">Whatever the Ubuntu release please install libncursesw5 package (**sudo apt-get install libncursesw5**)</span>
+<span style="color: blue;">Here are the recommended packages:</span>
+
+- <span style="color: blue;">Windows: **[arm-gnu-toolchain-14.3.rel1-mingw-w64-i686-aarch64-none-elf.zip](https://developer.arm.com/-/media/Files/downloads/gnu/14.3.rel1/binrel/arm-gnu-toolchain-14.3.rel1-mingw-w64-i686-aarch64-none-elf.zip)**</span>
+- <span style="color: blue;">Linux: **[arm-gnu-toolchain-14.3.rel1-x86_64-aarch64-none-elf.tar.xz](https://developer.arm.com/-/media/Files/downloads/gnu/14.3.rel1/binrel/arm-gnu-toolchain-14.3.rel1-x86_64-aarch64-none-elf.tar.xz)**</span>
+
+<span style="color: blue;">Depending on the Ubuntu release, it could be also requested to install libncursesw5 package (**sudo apt-get install libncursesw5**)</span>
 
 <span style="color: blue;">Download the aarch64 toolchain and unzip it on your PC. Here again, please install it not so far from root directory, because there can be some long path issues with unexpected behaviors.</span>
 
@@ -385,9 +398,9 @@ To import a DDR Tool project in STM32CubeIDE, follow these steps:
 - <span style="color: blue;">In Tool Settings tab, select MCU Toolchain</span>
 - <span style="color: blue;">Click on Open Toolchain Manager…</span>
 - <span style="color: blue;">Click on Add Local… and fill information (Windows example)</span>
-	- <span style="color: blue;">Name = gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf</span>
+	- <span style="color: blue;">Name = arm-gnu-toolchain-14.3.rel1-mingw-w64-i686-aarch64-none-elf</span>
 	- <span style="color: blue;">Prefix = aarch64-none-elf-</span>
-	- <span style="color: blue;">Location = {…}\gcc-arm-9.2-2019.12-mingw-w64-i686-aarch64-none-elf\bin</span>
+	- <span style="color: blue;">Location = {…}\arm-gnu-toolchain-14.3.rel1-mingw-w64-i686-aarch64-none-elf\bin</span>
 	- <span style="color: blue;">Click on Finish, and then Apply and Close</span>
 - <span style="color: blue;">In “Select what toolchain to use” part, click on toolchain name and choose the newly added one</span>
 - <span style="color: blue;">Click on Apply and Close</span>
@@ -416,7 +429,7 @@ To launch the project:
 
 - Right click on the project in the Project Explorer
 - Select "Debug As / Debug Configurations”
-- In STM32 Cortex-M C/C++ Application / Select your debug configuration (if not present, double-click on "STM32 Cortex-M C/C++ Application")
+- In STM32 C/C++ Application / Select your debug configuration (if not present, double-click on "STM32 C/C++ Application")
 - In Main tab:
    - Make sure binary file .elf is correctly set
 - In Debugger tab:
@@ -450,6 +463,8 @@ freq                       displays the DDR PHY frequency in kHz
 freq  <freq>               changes the DDR PHY frequency
 param [type|reg]           prints input parameters
 param <reg> <val>          edits parameters in step 0
+impedance [name]           prints impedances
+impedance <name> <val>     edits impedances in step 0
 print [type|reg]           dumps registers
 edit <reg> <val>           modifies one register
 save                       output formated DDR regs to be saved
@@ -467,9 +482,9 @@ with for [type|reg]:
 ----------------------------------------------------------------
 ```
 
-***Note:***
+***Notes:***
 
-- *The "param" command is a simple way to test the modified settings, as it modifies the input parameters ('param' read from stm32mp\_util\_ddr\_conf.h). It is recommended to execute this command at step 0. The modified values are applied at the correct DDR steps.*
+- *The "param" and "impedance" commands are a simple way to test the modified settings, as they modify the input parameters (read from stm32mp\_util\_ddr\_conf.h). It is recommended to execute these two commands at step 0. The modified values are applied at the correct DDR steps.*
 - *The "print" and "edit" commands directly access the DDRC registers and PHY user input parameters (or PHY registers for STM32MP1 series), so the values can be overridden by the input parameters when the driver executes the initialization steps. These commands are used for detailed debug of the DDR initialization.*
 
 ##### 2.3.1.2 Command examples
@@ -543,6 +558,116 @@ DDR>save
 #define DDR_MSTR 0x01040010
 #define DDR_MRCTRL0 0x00000030
 ...
+----------------------------------------------------------------
+```
+
+##### 2.3.1.3 Special case of expert algorithms (STM32MP2 series only)
+
+###### 2.3.1.3.1 TX impedance eye diagram
+
+This algorithm has been developed to guide user through TX impedance tuning which depends on the following trio: SoC, DDR and layout. Here are the focused impedance names depending on the DDR type:
+
+- DDR3 and DDR4: TX (TX drive impedance) and RTTNOM (nominal on-die termination [ODT])
+	+ on DDR4, we suppose RTTWR (dynamic ODT) is always equal to 0.
+	+ still on DDR4, we suppose RTTPARK (parked ODT) is always equal to RTTNOM.
+- LPDDR4: TX and DQODT (data line ODT)
+
+This scenario parses all the considered TX impedance combinations and measure for each of them the bidirectional delay margins on all data strobe lines (DQS) with successful stress tests. For each combination, re-entrance is used to go back to step 0, update impedance values and go back to step 3 (i.e. execute the training sequence). The results are then displayed in a 2D eye diagram to provide a visual illustration of the board performances.
+
+Impedance range is reduced for this algorithm to avoid extreme current values (low and high).
+
+Here is the log launched on STM32MP257F_EV1 board (DDR4):
+
+```
+----------------------------TERMINAL----------------------------
+DDR>test 17
+case 01/15:  TX = 030 Ohms, RTTNOM = 034 Ohms
+case 02/15:  TX = 030 Ohms, RTTNOM = 040 Ohms
+case 03/15:  TX = 030 Ohms, RTTNOM = 048 Ohms
+case 04/15:  TX = 030 Ohms, RTTNOM = 060 Ohms
+case 05/15:  TX = 030 Ohms, RTTNOM = 080 Ohms
+case 06/15:  TX = 040 Ohms, RTTNOM = 034 Ohms
+current impedance configuration not functional
+case 07/15:  TX = 040 Ohms, RTTNOM = 040 Ohms
+case 08/15:  TX = 040 Ohms, RTTNOM = 048 Ohms
+case 09/15:  TX = 040 Ohms, RTTNOM = 060 Ohms
+case 10/15:  TX = 040 Ohms, RTTNOM = 080 Ohms
+case 11/15:  TX = 060 Ohms, RTTNOM = 034 Ohms
+current impedance configuration not functional
+case 12/15:  TX = 060 Ohms, RTTNOM = 040 Ohms
+current impedance configuration not functional
+case 13/15:  TX = 060 Ohms, RTTNOM = 048 Ohms
+current impedance configuration not functional
+case 14/15:  TX = 060 Ohms, RTTNOM = 060 Ohms
+case 15/15:  TX = 060 Ohms, RTTNOM = 080 Ohms
+
+ TX  |
+ 030 |  35    41    44    46    41
+ 040 |  00    27    34    43    43
+ 060 |  00    00    00    08    30
+     |______________________________
+       034   040   048   060   080
+       RTTNOM
+----------------------------------------------------------------
+```
+
+As shown on the example above, non-robust impedance couples can lead to errors even on the nominal case (without changing any margin). The higher the result is, the better the eye opening is.
+The goal is only to propose a trend to the user. The impedance values can then be modified inside the settings (with the dedicated command in step 0) to allow user to further explore the tests.
+
+###### 2.3.1.3.1 RX impedance eye diagram
+
+This is the same algorithm as in previous section, but applied to RX impedances:
+
+- DDR3: ODT and Ron (DIC0)
+- DDR4: ODT and ODI (Output Driver Impedance)
+- LPDDR4: ODT and PDDS (Pull Down Driver Strength)
+
+Here is the log launched on STM32MP257F_EV1 board (DDR4):
+
+```
+----------------------------TERMINAL----------------------------
+DDR>test 18
+case 01/24:  ODT = 037 Ohms, ODI = 034 Ohms
+case 02/24:  ODT = 037 Ohms, ODI = 048 Ohms
+case 03/24:  ODT = 040 Ohms, ODI = 034 Ohms
+case 04/24:  ODT = 040 Ohms, ODI = 048 Ohms
+case 05/24:  ODT = 044 Ohms, ODI = 034 Ohms
+case 06/24:  ODT = 044 Ohms, ODI = 048 Ohms
+case 07/24:  ODT = 048 Ohms, ODI = 034 Ohms
+case 08/24:  ODT = 048 Ohms, ODI = 048 Ohms
+case 09/24:  ODT = 053 Ohms, ODI = 034 Ohms
+case 10/24:  ODT = 053 Ohms, ODI = 048 Ohms
+case 11/24:  ODT = 060 Ohms, ODI = 034 Ohms
+case 12/24:  ODT = 060 Ohms, ODI = 048 Ohms
+case 13/24:  ODT = 068 Ohms, ODI = 034 Ohms
+case 14/24:  ODT = 068 Ohms, ODI = 048 Ohms
+case 15/24:  ODT = 080 Ohms, ODI = 034 Ohms
+case 16/24:  ODT = 080 Ohms, ODI = 048 Ohms
+case 17/24:  ODT = 096 Ohms, ODI = 034 Ohms
+case 18/24:  ODT = 096 Ohms, ODI = 048 Ohms
+case 19/24:  ODT = 120 Ohms, ODI = 034 Ohms
+case 20/24:  ODT = 120 Ohms, ODI = 048 Ohms
+case 21/24:  ODT = 160 Ohms, ODI = 034 Ohms
+case 22/24:  ODT = 160 Ohms, ODI = 048 Ohms
+case 23/24:  ODT = 240 Ohms, ODI = 034 Ohms
+case 24/24:  ODT = 240 Ohms, ODI = 048 Ohms
+
+ ODT |
+ 037 |  38    34
+ 040 |  38    37
+ 044 |  38    38
+ 048 |  39    37
+ 053 |  40    39
+ 060 |  39    40
+ 068 |  39    40
+ 080 |  39    41
+ 096 |  38    40
+ 120 |  38    38
+ 160 |  34    36
+ 240 |  34    38
+     |____________
+       034   048
+       ODI
 ----------------------------------------------------------------
 ```
 
@@ -659,18 +784,19 @@ In the DDR interactive logs, the static parameters are displayed and “step 3�
 
 “Save Config File” button output formatted DDR registers in DDR_Config_file.txt (check logs for the file location if no project has been created). It calls the “save” command described in Command description table.
 
-The tests described in *§1.3.4.1 Test description* can be executed in the DDR Test Suite of STM32CubeMX.
+The tests described in *§1.2.4.1 Test description* can be executed in the DDR Test Suite of STM32CubeMX.
 
 Select a test and click on “Run test” button.
 
 Test result is displayed in DDR interactive logs.
 
-***Note:***
+***Notes:***
 
-- *As mentioned in §1.3.4.2 Test infinite read/write access to ddr, “Infinite read” and “Infinite write” tests are only available in Engineering mode and require breaking in STM3CubeIDE debugger. That is why these tests are not available in STM32CubeMX DDR Test Suite.*
+- *As mentioned in §1.2.4.2 Test infinite read/write access to ddr, “Infinite read” and “Infinite write” tests are only available in Engineering mode and require breaking in STM3CubeIDE debugger. That is why these tests are not available in STM32CubeMX DDR Test Suite.*
+- *This is the same for expert tests (only on STM32MP2 series), they are not available in STM32CubeMX DDR Test Suite as mentioned in §1.2.4.3.*
 - *In STM32CubeMX, test 17 of the DDR Test Suite is implemented in STM32CubeMX:*
 
-***Test 17 “Overclocking (5%) test”*** *: Run Level1 intensive tests with DDR clock increase by ~5% (up to 30MHz)*
+ ***Test 17 “Overclocking (5%) test”*** *: Run Level1 intensive tests with DDR clock increase by ~5% (up to 30MHz)*
 
 
 
