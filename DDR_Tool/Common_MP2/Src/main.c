@@ -323,6 +323,11 @@ static uint32_t SystemClock_Config(void)
     while (1);
   }
 
+  /* Enable write access to D3 domain registers */
+#if defined(PWR_BDCR1_DBD3P)
+  HAL_PWR_EnableBkUpD3Access();
+#endif /* defined(PWR_BDCR1_DBD3P) */
+
   return 0;
 }
 

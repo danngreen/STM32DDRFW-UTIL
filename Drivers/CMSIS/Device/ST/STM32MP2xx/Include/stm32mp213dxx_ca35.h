@@ -2435,7 +2435,6 @@ typedef struct
   __IO uint32_t MIDR;             /*!< OCTOPSI HW Magic ID register,                       Address offset: 0x3FC */
 } OCTOSPI_TypeDef;
 
-
 /**
   * @brief PSSI
   */
@@ -3931,6 +3930,8 @@ typedef struct
 #define MDF1_Filter7_BASE                   (MDF1_BASE + 0x400UL)
 #define ADC1_BASE                           (AHB2_PERIPH_BASE + 0x0E0000UL)
 #define ADC2_BASE                           (AHB2_PERIPH_BASE + 0x0F0000UL)
+#define ADC1_COMMON_BASE                    (AHB2_PERIPH_BASE + 0x0E0300UL)
+#define ADC2_COMMON_BASE                    (AHB2_PERIPH_BASE + 0x0F0300UL)
 
 #define HPDMA1_Channel0_BASE                (HPDMA1_BASE + 0x0050UL)
 #define HPDMA1_Channel1_BASE                (HPDMA1_BASE + 0x00D0UL)
@@ -4192,6 +4193,8 @@ typedef struct
 #define MDF1_Filter7                        ((MDF_Filter_TypeDef*) MDF1_Filter7_BASE)
 #define ADC1                                ((ADC_TypeDef *) ADC1_BASE)
 #define ADC2                                ((ADC_TypeDef *) ADC2_BASE)
+#define ADC1_COMMON                         ((ADC_Common_TypeDef *) ADC1_COMMON_BASE)
+#define ADC2_COMMON                         ((ADC_Common_TypeDef *) ADC2_COMMON_BASE)
 
 #define HPDMA1_Channel0                     ((DMA_Channel_TypeDef *) HPDMA1_Channel0_BASE)
 #define HPDMA1_Channel1                     ((DMA_Channel_TypeDef *) HPDMA1_Channel1_BASE)

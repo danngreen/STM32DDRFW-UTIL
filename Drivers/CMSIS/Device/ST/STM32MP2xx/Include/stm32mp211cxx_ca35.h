@@ -2383,7 +2383,6 @@ typedef struct
   __IO uint32_t MIDR;             /*!< OCTOPSI HW Magic ID register,                       Address offset: 0x3FC */
 } OCTOSPI_TypeDef;
 
-
 /**
   * @brief OTFDEC register
   */
@@ -2414,22 +2413,23 @@ typedef struct
   __IO uint32_t IPIDR;            /*!< OTFDEC identification register                           Address offset: 0x3F8 */
   __IO uint32_t SIDR;             /*!< OTFDEC size ID register                                  Address offset: 0x3FC */
 } OTFDEC_TypeDef;
- /**
+
+/**
   * @brief Public Key Accelerator (PKA)
   */
 #define PKA_RAM_SIZE (5336U/4U)
 typedef struct
 {
-  __IO uint32_t CR;             /*!< PKA control register                Address offset: 0x0000 */
-  __IO uint32_t SR;             /*!< PKA status register                 Address offset: 0x0004 */
-  __IO uint32_t CLRFR;          /*!< PKA clear flag register             Address offset: 0x0008 */
-       uint32_t Reserved1[253];                /*!< Reserved                    Address offset: 0x000C-0x03FC */
+  __IO uint32_t CR;             /*!< PKA control register,                Address offset: 0x0000 */
+  __IO uint32_t SR;             /*!< PKA status register,                 Address offset: 0x0004 */
+  __IO uint32_t CLRFR;          /*!< PKA clear flag register,             Address offset: 0x0008 */
+       uint32_t Reserved1[253];                /*!< Reserved,                    Address offset: 0x000C-0x03FC */
   __IO uint32_t RAM[PKA_RAM_SIZE];             /*!< PKA RAM,                    Address offset: 0x0400-0xXXXX */
        uint32_t Reserved2[1788-PKA_RAM_SIZE];  /*!< Reserved                    Address offset: (0xXXXX+4)-0x1FEF */
-  __IO uint32_t HWCFGR;         /*!< PKA hardware configuration register Address offset: 0x1FF0 */
-  __IO uint32_t VERR;           /*!< PKA version register                Address offset: 0x1FF4 */
-  __IO uint32_t IPIDR;          /*!< PKA identification register         Address offset: 0x1FF8 */
-  __IO uint32_t SIDR;           /*!< PKA size ID register                Address offset: 0x1FFC */
+  __IO uint32_t HWCFGR;         /*!< PKA hardware configuration register, Address offset: 0x1FF0 */
+  __IO uint32_t VERR;           /*!< PKA version register,                Address offset: 0x1FF4 */
+  __IO uint32_t IPIDR;          /*!< PKA identification register,         Address offset: 0x1FF8 */
+  __IO uint32_t SIDR;           /*!< PKA size ID register,                Address offset: 0x1FFC */
 } PKA_TypeDef;
 
 /**
@@ -3974,6 +3974,8 @@ typedef struct
 #define MDF1_Filter7_BASE                   (MDF1_BASE + 0x400UL)
 #define ADC1_BASE                           (AHB2_PERIPH_BASE + 0x0E0000UL)
 #define ADC2_BASE                           (AHB2_PERIPH_BASE + 0x0F0000UL)
+#define ADC1_COMMON_BASE                    (AHB2_PERIPH_BASE + 0x0E0300UL)
+#define ADC2_COMMON_BASE                    (AHB2_PERIPH_BASE + 0x0F0300UL)
 
 #define HPDMA1_Channel0_BASE                (HPDMA1_BASE + 0x0050UL)
 #define HPDMA1_Channel1_BASE                (HPDMA1_BASE + 0x00D0UL)
@@ -4248,6 +4250,8 @@ typedef struct
 #define MDF1_Filter7                        ((MDF_Filter_TypeDef*) MDF1_Filter7_BASE)
 #define ADC1                                ((ADC_TypeDef *) ADC1_BASE)
 #define ADC2                                ((ADC_TypeDef *) ADC2_BASE)
+#define ADC1_COMMON                         ((ADC_Common_TypeDef *) ADC1_COMMON_BASE)
+#define ADC2_COMMON                         ((ADC_Common_TypeDef *) ADC2_COMMON_BASE)
 
 #define HPDMA1_Channel0                     ((DMA_Channel_TypeDef *) HPDMA1_Channel0_BASE)
 #define HPDMA1_Channel1                     ((DMA_Channel_TypeDef *) HPDMA1_Channel1_BASE)

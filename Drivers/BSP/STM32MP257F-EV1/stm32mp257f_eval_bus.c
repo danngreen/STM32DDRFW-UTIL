@@ -819,7 +819,7 @@ static void I2C_MspInit(I2C_HandleTypeDef *hI2c)
     BUS_I2C_SCL_GPIO_CLK_ENABLE();
   }
 
-  if (ResMgr_Request(RESMGR_RESOURCE_RIF_RCC, BUS_I2C_SCL_RCC_RES) == RESMGR_STATUS_ACCESS_OK)
+  if (ResMgr_Request(RESMGR_RESOURCE_RIF_RCC, BUS_I2C_SDA_RCC_RES) == RESMGR_STATUS_ACCESS_OK)
   {
     /* Enable SDA GPIO clock */
     BUS_I2C_SDA_GPIO_CLK_ENABLE();

@@ -185,6 +185,9 @@ void ddrphy_phyinit_writeoutmem(const uint32_t *mem, uint32_t mem_offset, int32_
 void ddrphy_phyinit_writeoutmsgblk(uint16_t *mem, uint32_t mem_offset, int32_t mem_size);
 int32_t ddrphy_phyinit_isdbytedisabled(int32_t dbytenumber);
 int32_t ddrphy_phyinit_setretreglistbase(uintptr_t base);
+int32_t ddrphy_phyinit_read_numpstates(void);
+int32_t ddrphy_phyinit_read_numanib(void);
+int32_t ddrphy_phyinit_read_numdbyte(void);
 int32_t ddrphy_phyinit_trackreg(uint32_t adr);
 int32_t ddrphy_phyinit_reginterface(reginstr myreginstr, uint32_t adr, uint16_t dat);
 

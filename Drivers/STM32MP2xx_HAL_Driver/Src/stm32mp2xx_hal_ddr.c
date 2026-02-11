@@ -1071,6 +1071,7 @@ HAL_DDR_ConfigTypeDef static_ddr_config =
 
 static bool axi_port_reenable_request;
 static bool host_interface_reenable_request;
+static uint32_t sem_mutex_save;
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -1658,7 +1659,11 @@ static int32_t activate_controller(bool sr_entry)
     CLEAR_BIT(DDRC->DFIMISC, DDRC_DFIMISC_DFI_FREQUENCY);
   }
 
-  SET_BIT(DDRC->DFIMISC, DDRC_DFIMISC_DFI_INIT_START);
+  do
+  {
+    SET_BIT(DDRC->DFIMISC, DDRC_DFIMISC_DFI_INIT_START);
+  } while ((READ_REG(DDRC->DFIMISC) & DDRC_DFIMISC_DFI_INIT_START) == 0U);
+
   CLEAR_BIT(DDRC->DFIMISC, DDRC_DFIMISC_DFI_INIT_START);
 
   if (wait_dfi_init_complete() != 0)
@@ -1871,6 +1876,10 @@ bool is_ddr_cid_filtering_enabled(void)
 void ddr_enable_cid_filtering(void)
 {
   SET_BIT(RCC->R[RCC_LOCALRES_104].CIDCFGR, RCC_RxCIDCFGR_CFEN);
+  if (sem_mutex_save != 0)
+  {
+    SET_BIT(RCC->R[RCC_LOCALRES_104].SEMCR, RCC_RxSEMCR_SEM_MUTEX);
+  }
 }
 
 /**
@@ -1880,6 +1889,7 @@ void ddr_enable_cid_filtering(void)
   */
 void ddr_disable_cid_filtering(void)
 {
+  sem_mutex_save = READ_REG(RCC->R[RCC_LOCALRES_104].SEMCR) & RCC_RxSEMCR_SEM_MUTEX;
   CLEAR_BIT(RCC->R[RCC_LOCALRES_104].CIDCFGR, RCC_RxCIDCFGR_CFEN);
 }
 
@@ -3056,17 +3066,16 @@ void HAL_DDR_Edit_Param(HAL_DDR_ConfigTypeDef *config, char *name,
  * Applicable for one specific DDR type or for all of them.
  */
 const uint32_t tx_ohms[MAX_TX] = {20  , 24  , 30  , 40  , 60  , 120 };
-#if STM32MP_LPDDR4_TYPE
-#define TX_MASK 0xFFFFFF80 /* Clears bits [6:0] */
-const uint8_t tx_data[MAX_TX]  = {0x5C, 0x57, 0x50, 0x47, 0x19, 0x06};
-#endif /* STM32MP_LPDDR4_TYPE */
 const uint32_t odt_ohms[MAX_ODT] = { 28,  30,  32,  34,  37,  40,  44,  48,
                                      53,  60,  68,  80,  96, 120, 160, 240, 480};
 
 #if STM32MP_DDR3_TYPE
-#define RTTNOM_MASK 0xFFFFFDBB /* Clear bits 2, 6, 9 */
-const uint32_t rttnom_ohms[MAX_RTTNOM] = {0    , 20   , 34   , 40   , 60   , 120  };
-const uint16_t rttnom_data[MAX_RTTNOM] = {0x000, 0x200, 0x204, 0x044, 0x004, 0x040};
+#define RTTWR_MASK_1 0xF9FFFFFF /* For INIT4, clears bits [26:25] */
+#define RTTWR_SHIFT_1 16
+#define RTTWR_MASK_2 0xFFFFF9FF /* For MR2, clears bits [10:9] */
+#define RTTWR_SHIFT_2 0
+const uint32_t rttwr_ohms[MAX_RTTWR] = {0    , 60   , 120  };
+const uint16_t rttwr_data[MAX_RTTWR] = {0x000, 0x200, 0x400};
 #define RON_MASK 0xFFFFFFFD /* Clears bit 1 */
 const uint32_t ron_ohms[MAX_RON] = {34 , 40 };
 const uint16_t ron_data[MAX_RON] = {0x2, 0x0};
@@ -3084,6 +3093,15 @@ const uint16_t odi_data[MAX_ODI] = {0x0, 0x2};
 #endif /* STM32MP_DDR4_TYPE */
 
 #if STM32MP_LPDDR4_TYPE
+#define TX_MASK 0xFFFFFF80 /* Clears bits [6:0] */
+const uint8_t tx_data[MAX_DQODT][MAX_TX] = { {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+                                             {0x5C, 0x57, 0x50, 0x47, 0x19, 0x06},
+                                             {0x61, 0x5C, 0x55, 0x4D, 0x40, 0x0A},
+                                             {0x66, 0x62, 0x5C, 0x54, 0x47, 0x10},
+                                             {0x6D, 0x69, 0x63, 0x5C, 0x50, 0x19},
+                                             {0x74, 0x71, 0x6D, 0x66, 0x5C, 0x47},
+                                             {0x7C, 0x7A, 0x78, 0x74, 0x6D, 0x5C} };
+
 #define DQODT_MASK_1  0xFFF8FFFF /* For INIT6, clears bits 16, 17, 18 */
 #define DQODT_SHIFT_1 16
 #define DQODT_MASK_2  0xFFFFFFF8 /* For MR11, clears bits 0, 1, 2 */
@@ -3096,6 +3114,21 @@ const uint16_t dqodt_data[MAX_DQODT] = {0x0, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
 #define PDDS_SHIFT_2 3
 const uint32_t pdds_ohms[MAX_PDDS] = {40 , 48 , 60 , 80 , 120, 240};
 const uint16_t pdds_data[MAX_PDDS] = {0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
+const uint32_t atx_ohms[MAX_ATX] = {20  , 24  , 30  , 40  , 60  , 120 };
+#define ATX_MASK 0xFFFFFF80 /* Clears bits [6:0] */
+const uint8_t atx_data[MAX_CAODT][MAX_ATX] = { {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF},
+                                               {0x5C, 0x57, 0x50, 0x47, 0x19, 0x06},
+                                               {0x61, 0x5C, 0x55, 0x4D, 0x40, 0x0A},
+                                               {0x66, 0x62, 0x5C, 0x54, 0x47, 0x10},
+                                               {0x6D, 0x69, 0x63, 0x5C, 0x50, 0x19},
+                                               {0x74, 0x71, 0x6D, 0x66, 0x5C, 0x47},
+                                               {0x7C, 0x7A, 0x78, 0x74, 0x6D, 0x5C} };
+#define CAODT_MASK_1  0xFF8FFFFF /* For INIT6, clears bits 20, 21, 22 */
+#define CAODT_SHIFT_1 20
+#define CAODT_MASK_2  0xFFFFFF8F /* For MR12, clears bits 4, 5, 6 */
+#define CAODT_SHIFT_2 4
+const uint32_t caodt_ohms[MAX_CAODT] = {0  , 40 , 48 , 60 , 80 , 120, 240};
+const uint16_t caodt_data[MAX_CAODT] = {0x0, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1};
 #endif /* STM32MP_LPDDR4_TYPE */
 
 static void print_impedance(const char *name, uint32_t value)
@@ -3124,6 +3157,7 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
 
   /*
    * TX: available for all DDR types
+   *     dependency with DQODT for LPDDR4
    */
   strcpy(impedance, "TX");
   if (!name || !strcmp(name, impedance))
@@ -3134,16 +3168,34 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
     for (i = 0; i < MAX_TX; i++)
     {
 #if STM32MP_LPDDR4_TYPE
-      if ((value == tx_ohms[i]) &&
-          (((uint32_t)config->p_uim.mr14[0] & ~TX_MASK) == tx_data[i]) &&
-          (((uint32_t)config->c_reg.INIT7 & ~TX_MASK) == tx_data[i]))
+      int j;
+      bool tx_found = false;
+
+      for (j = 0; j < MAX_DQODT; j++)
+      {
+        if ((value == tx_ohms[i]) &&
+            (((uint32_t)config->p_uim.mr14[0] & ~TX_MASK) == tx_data[j][i]) &&
+            (((uint32_t)config->c_reg.INIT7 & ~TX_MASK) == tx_data[j][i]) &&
+            ((((uint32_t)config->p_uim.mr11[0] & ~DQODT_MASK_2) >> DQODT_SHIFT_2) == dqodt_data[j]) &&
+            ((((uint32_t)config->c_reg.INIT6 & ~DQODT_MASK_1) >> DQODT_SHIFT_1) == dqodt_data[j]))
+        {
+          print_impedance(impedance, value);
+          tx_found = true;
+          break;
+        }
+      }
+
+      if (tx_found)
+      {
+        break;
+      }
 #else /* !STM32MP_LPDDR4_TYPE */
       if (value == tx_ohms[i])
-#endif /* STM32MP_LPDDR4_TYPE */
       {
         print_impedance(impedance, value);
         break;
       }
+#endif /* STM32MP_LPDDR4_TYPE */
     }
 
     if (i == MAX_TX)
@@ -3151,19 +3203,23 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
       printf("%s has an unsupported/inconsistent value\n\r", impedance);
 #if STM32MP_LPDDR4_TYPE
 #ifdef __AARCH64__
-      printf("UIA_TXIMPEDANCE= 0x%08X\n\r", (uint32_t)config->p_uia.tximpedance[0]);
-#else
-      printf("UIA_TXIMPEDANCE= 0x%08lX\n\r", (uint32_t)config->p_uia.tximpedance[0]);
-#endif
-#else /* !STM32MP_LPDDR4_TYPE */
-#ifdef __AARCH64__
       printf("UIA_TXIMPEDANCE= 0x%08X  UIM_MR14= 0x%08X  DDR_INIT7= 0x%08X\n\r",
              (uint32_t)config->p_uia.tximpedance[0], (uint32_t)config->p_uim.mr14[0],
              (uint32_t)config->c_reg.INIT7);
+      printf("UIM_MR11= 0x%08X  DDR_INIT6= 0x%08X\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
 #else
       printf("UIA_TXIMPEDANCE= 0x%08lX  UIM_MR14= 0x%08lX  DDR_INIT7= 0x%08lX\n\r",
              (uint32_t)config->p_uia.tximpedance[0], (uint32_t)config->p_uim.mr14[0],
              (uint32_t)config->c_reg.INIT7);
+      printf("UIM_MR11= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+#endif
+#else /* !STM32MP_LPDDR4_TYPE */
+#ifdef __AARCH64__
+      printf("UIA_TXIMPEDANCE= 0x%08X\n\r", (uint32_t)config->p_uia.tximpedance[0]);
+#else
+      printf("UIA_TXIMPEDANCE= 0x%08lX\n\r", (uint32_t)config->p_uia.tximpedance[0]);
 #endif
 #endif /* STM32MP_LPDDR4_TYPE */
     }
@@ -3199,9 +3255,43 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
   }
 
   /*
-   * RTTNOM: available for DDR3 and DDR4
+   * RTTWR: available for DDR3
    */
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
+#if STM32MP_DDR3_TYPE
+  strcpy(impedance, "RTTWR");
+  if (!name || !strcmp(name, impedance))
+  {
+    found = true;
+
+    for (i = 0; i < MAX_RTTWR; i++)
+    {
+      if (((((uint32_t)config->p_uim.mr2[0] & ~RTTWR_MASK_2) >> RTTWR_SHIFT_2) == rttwr_data[i]) &&
+          ((((uint32_t)config->c_reg.INIT4 & ~RTTWR_MASK_1) >> RTTWR_SHIFT_1) == rttwr_data[i]))
+      {
+        value = rttwr_ohms[i];
+        print_impedance(impedance, value);
+        break;
+      }
+    }
+
+    if (i == MAX_RTTWR)
+    {
+      printf("%s has an unsupported/inconsistent value\n\r", impedance);
+#ifdef __AARCH64__
+      printf("UIM_MR2= 0x%08X  DDR_INIT4= 0x%08X\n\r",
+             (uint32_t)config->p_uim.mr2[0], (uint32_t)config->c_reg.INIT4);
+#else
+      printf("UIM_MR2= 0x%08lX  DDR_INIT4= 0x%08lX\n\r",
+             (uint32_t)config->p_uim.mr2[0], (uint32_t)config->c_reg.INIT4);
+#endif
+    }
+  }
+#endif /* STM32MP_DDR3_TYPE */
+
+  /*
+   * RTTNOM: available for DDR4
+   */
+#if STM32MP_DDR4_TYPE
   strcpy(impedance, "RTTNOM");
   if (!name || !strcmp(name, impedance))
   {
@@ -3209,15 +3299,10 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
 
     for (i = 0; i < MAX_RTTNOM; i++)
     {
-#if STM32MP_DDR3_TYPE
-      if ((((uint32_t)config->p_uim.mr1[0] & ~RTTNOM_MASK) == rttnom_data[i]) &&
-          (((uint32_t)config->c_reg.INIT3 & ~RTTNOM_MASK) == rttnom_data[i]))
-#else /* STM32MP_DDR4_TYPE */
       if ((((uint32_t)config->p_uim.mr1[0] & ~RTTNOM_MASK) == rttnom_data[i]) &&
           (((uint32_t)config->c_reg.INIT3 & ~RTTNOM_MASK) == rttnom_data[i]) &&
           (((uint32_t)config->p_uim.mr5[0] & ~RTTPARK_MASK) == rttpark_data[i]) &&
           (((uint32_t)config->c_reg.INIT6 & ~RTTPARK_MASK) == rttpark_data[i]))
-#endif /* STM32MP_DDR3_TYPE */
       {
         value = rttnom_ohms[i];
         print_impedance(impedance, value);
@@ -3228,15 +3313,6 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
     if (i == MAX_RTTNOM)
     {
       printf("%s has an unsupported/inconsistent value\n\r", impedance);
-#if STM32MP_DDR3_TYPE
-#ifdef __AARCH64__
-      printf("UIM_MR1= 0x%08X  DDR_INIT3= 0x%08X\n\r",
-             (uint32_t)config->p_uim.mr1[0], (uint32_t)config->c_reg.INIT3);
-#else
-      printf("UIM_MR1= 0x%08lX  DDR_INIT3= 0x%08lX\n\r",
-             (uint32_t)config->p_uim.mr1[0], (uint32_t)config->c_reg.INIT3);
-#endif
-#else /* STM32MP_DDR4_TYPE */
 #ifdef __AARCH64__
       printf("UIM_MR1= 0x%08X  DDR_INIT3= 0x%08X  UIM_MR5= 0x%08X  DDR_INIT6= 0x%08X\n\r",
              (uint32_t)config->p_uim.mr1[0], (uint32_t)config->c_reg.INIT3,
@@ -3246,10 +3322,9 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
              (uint32_t)config->p_uim.mr1[0], (uint32_t)config->c_reg.INIT3,
              (uint32_t)config->p_uim.mr5[0], (uint32_t)config->c_reg.INIT6);
 #endif
-#endif /* STM32MP_DDR3_TYPE */
     }
   }
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
+#endif /* STM32MP_DDR4_TYPE */
 
   /*
    * RON: available for DDR3
@@ -3321,6 +3396,7 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
 
   /*
    * DQODT: available for LPDDR4
+   *        dependency with TX
    */
 #if STM32MP_LPDDR4_TYPE
   strcpy(impedance, "DQODT");
@@ -3330,11 +3406,26 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
 
     for (i = 0; i < MAX_DQODT; i++)
     {
-      if (((((uint32_t)config->p_uim.mr11[0] & ~DQODT_MASK_2) >> DQODT_SHIFT_2) == dqodt_data[i]) &&
-          ((((uint32_t)config->c_reg.INIT6 & ~DQODT_MASK_1) >> DQODT_SHIFT_1) == dqodt_data[i]))
+      int j;
+      bool dqodt_found = false;
+
+      for (j = 0; j < MAX_TX; j++)
       {
-        value = dqodt_ohms[i];
-        print_impedance(impedance, value);
+        if (((((uint32_t)config->p_uim.mr11[0] & ~DQODT_MASK_2) >> DQODT_SHIFT_2) == dqodt_data[i]) &&
+            ((((uint32_t)config->c_reg.INIT6 & ~DQODT_MASK_1) >> DQODT_SHIFT_1) == dqodt_data[i]) &&
+            ((uint32_t)config->p_uia.tximpedance[0] == tx_ohms[j]) &&
+            (((uint32_t)config->p_uim.mr14[0] & ~TX_MASK) == tx_data[i][j]) &&
+            (((uint32_t)config->c_reg.INIT7 & ~TX_MASK) == tx_data[i][j]))
+        {
+          value = dqodt_ohms[i];
+          print_impedance(impedance, value);
+          dqodt_found = true;
+          break;
+        }
+      }
+
+      if (dqodt_found)
+      {
         break;
       }
     }
@@ -3343,13 +3434,18 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
     {
       printf("%s has an unsupported/inconsistent value\n\r", impedance);
 #ifdef __AARCH64__
-    printf("UIM_MR11= 0x%08X  DDR_INIT6= 0x%08X\n\r",
-           (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+      printf("UIM_MR11= 0x%08X  DDR_INIT6= 0x%08X\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+      printf("UIA_TXIMPEDANCE= 0x%08X  UIM_MR14= 0x%08X  DDR_INIT7= 0x%08X\n\r",
+             (uint32_t)config->p_uia.tximpedance[0], (uint32_t)config->p_uim.mr14[0],
+             (uint32_t)config->c_reg.INIT7);
 #else
-    printf("UIM_MR11= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
-           (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+      printf("UIM_MR11= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+      printf("UIA_TXIMPEDANCE= 0x%08lX  UIM_MR14= 0x%08lX  DDR_INIT7= 0x%08lX\n\r",
+             (uint32_t)config->p_uia.tximpedance[0], (uint32_t)config->p_uim.mr14[0],
+             (uint32_t)config->c_reg.INIT7);
 #endif
-
     }
   }
 #endif /* STM32MP_LPDDR4_TYPE */
@@ -3378,13 +3474,125 @@ HAL_StatusTypeDef HAL_DDR_Dump_Impedance(HAL_DDR_ConfigTypeDef *config,
     {
       printf("%s has an unsupported/inconsistent value\n\r", impedance);
 #ifdef __AARCH64__
-    printf("UIM_MR3= 0x%08X  DDR_INIT4= 0x%08X\n\r",
-           (uint32_t)config->p_uim.mr3[0], (uint32_t)config->c_reg.INIT4);
+      printf("UIM_MR3= 0x%08X  DDR_INIT4= 0x%08X\n\r",
+             (uint32_t)config->p_uim.mr3[0], (uint32_t)config->c_reg.INIT4);
 #else
-    printf("UIM_MR3= 0x%08lX  DDR_INIT4= 0x%08lX\n\r",
-           (uint32_t)config->p_uim.mr3[0], (uint32_t)config->c_reg.INIT4);
+      printf("UIM_MR3= 0x%08lX  DDR_INIT4= 0x%08lX\n\r",
+             (uint32_t)config->p_uim.mr3[0], (uint32_t)config->c_reg.INIT4);
 #endif
 
+    }
+  }
+#endif /* STM32MP_LPDDR4_TYPE */
+
+  /*
+   * ATX: available for LPDDR4
+   *      dependency with CAODT
+   */
+#if STM32MP_LPDDR4_TYPE
+  strcpy(impedance, "ATX");
+  if (!name || !strcmp(name, impedance))
+  {
+    found = true;
+    value = (uint32_t)config->p_uia.atximpedance;
+
+    for (i = 0; i < MAX_ATX; i++)
+    {
+      int j;
+      bool atx_found = false;
+
+      for (j = 0; j < MAX_CAODT; j++)
+      {
+        if ((value == atx_ohms[i]) &&
+            (((uint32_t)config->p_uim.mr12[0] & ~ATX_MASK) == atx_data[j][i]) &&
+            (((uint32_t)config->c_reg.INIT6 & ~ATX_MASK) == atx_data[j][i]) &&
+            ((((uint32_t)config->p_uim.mr11[0] & ~CAODT_MASK_2) >> CAODT_SHIFT_2) == caodt_data[j]) &&
+            ((((uint32_t)config->c_reg.INIT6 & ~CAODT_MASK_1) >> CAODT_SHIFT_1) == caodt_data[j]))
+        {
+          print_impedance(impedance, value);
+          atx_found = true;
+          break;
+        }
+      }
+
+      if (atx_found)
+      {
+        break;
+      }
+    }
+
+    if (i == MAX_ATX)
+    {
+      printf("%s has an unsupported/inconsistent value\n\r", impedance);
+#ifdef __AARCH64__
+      printf("UIA_ATXIMPEDANCE= 0x%08X  UIM_MR12= 0x%08X  DDR_INIT6= 0x%08X\n\r",
+             (uint32_t)config->p_uia.atximpedance, (uint32_t)config->p_uim.mr12[0],
+             (uint32_t)config->c_reg.INIT6);
+      printf("UIM_MR11= 0x%08X  DDR_INIT6= 0x%08X\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+#else
+      printf("UIA_ATXIMPEDANCE= 0x%08lX  UIM_MR12= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
+             (uint32_t)config->p_uia.atximpedance, (uint32_t)config->p_uim.mr12[0],
+             (uint32_t)config->c_reg.INIT6);
+      printf("UIM_MR11= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+#endif
+    }
+  }
+#endif /* STM32MP_LPDDR4_TYPE */
+
+  /*
+   * CAODT: available for LPDDR4
+   *        dependency with ATX
+   */
+#if STM32MP_LPDDR4_TYPE
+  strcpy(impedance, "CAODT");
+  if (!name || !strcmp(name, impedance))
+  {
+    found = true;
+
+    for (i = 0; i < MAX_CAODT; i++)
+    {
+      int j;
+      bool caodt_found = false;
+
+      for (j = 0; j < MAX_ATX; j++)
+      {
+        if (((uint32_t)config->p_uia.atximpedance == atx_ohms[j]) &&
+            (((uint32_t)config->p_uim.mr12[0] & ~ATX_MASK) == atx_data[i][j]) &&
+            (((uint32_t)config->c_reg.INIT6 & ~ATX_MASK) == atx_data[i][j]) &&
+            ((((uint32_t)config->p_uim.mr11[0] & ~CAODT_MASK_2) >> CAODT_SHIFT_2) == caodt_data[i]) &&
+            ((((uint32_t)config->c_reg.INIT6 & ~CAODT_MASK_1) >> CAODT_SHIFT_1) == caodt_data[i]))
+        {
+          value = caodt_ohms[i];
+          print_impedance(impedance, value);
+          caodt_found = true;
+          break;
+        }
+      }
+
+      if (caodt_found)
+      {
+        break;
+      }
+    }
+
+    if (i == MAX_CAODT)
+    {
+      printf("%s has an unsupported/inconsistent value\n\r", impedance);
+#ifdef __AARCH64__
+      printf("UIM_MR11= 0x%08X  DDR_INIT6= 0x%08X\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+      printf("UIA_ATXIMPEDANCE= 0x%08X  UIM_MR12= 0x%08X  DDR_INIT6= 0x%08X\n\r",
+             (uint32_t)config->p_uia.atximpedance, (uint32_t)config->p_uim.mr12[0],
+             (uint32_t)config->c_reg.INIT6);
+#else
+      printf("UIM_MR11= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
+             (uint32_t)config->p_uim.mr11[0], (uint32_t)config->c_reg.INIT6);
+      printf("UIA_ATXIMPEDANCE= 0x%08lX  UIM_MR12= 0x%08lX  DDR_INIT6= 0x%08lX\n\r",
+             (uint32_t)config->p_uia.atximpedance, (uint32_t)config->p_uim.mr12[0],
+             (uint32_t)config->c_reg.INIT6);
+#endif
     }
   }
 #endif /* STM32MP_LPDDR4_TYPE */
@@ -3446,11 +3654,29 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
 
   /*
    * TX: available for all DDR types
+   *     dependency with DQODT
    */
   strcpy(impedance, "TX");
   if (!strcmp(name, impedance))
   {
+#if STM32MP_LPDDR4_TYPE
+    int j;
+#endif /* STM32MP_LPDDR4_TYPE */
+
     found = true;
+
+#if STM32MP_LPDDR4_TYPE
+    /* Get DQODT index */
+    for (j = 0; j < MAX_DQODT; j++)
+    {
+      if (((((uint32_t)config->p_uim.mr11[0] & ~DQODT_MASK_2) >> DQODT_SHIFT_2) == dqodt_data[j]) &&
+          ((((uint32_t)config->c_reg.INIT6 & ~DQODT_MASK_1) >> DQODT_SHIFT_1) == dqodt_data[j]))
+      {
+        break;
+      }
+    }
+#endif /* STM32MP_LPDDR4_TYPE */
+
     for (i = 0; i < MAX_TX; i++)
     {
       if (value == tx_ohms[i])
@@ -3458,16 +3684,20 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
         config->p_uia.tximpedance[0] = (int32_t)value;
 #if STM32MP_LPDDR4_TYPE
         config->p_uim.mr14[0] &= TX_MASK;
-        config->p_uim.mr14[0] |= tx_data[i];
+        config->p_uim.mr14[0] |= tx_data[j][i];
         config->c_reg.INIT7 &= TX_MASK;
-        config->c_reg.INIT7 |= tx_data[i];
+        config->c_reg.INIT7 |= tx_data[j][i];
 #endif /* STM32MP_LPDDR4_TYPE */
         print_impedance(impedance, value);
         break;
       }
     }
 
+#if STM32MP_LPDDR4_TYPE
+    if ((i == MAX_TX) || (j == MAX_DQODT))
+#else /* !STM32MP_LPDDR4_TYPE */
     if (i == MAX_TX)
+#endif /* STM32MP_LPDDR4_TYPE */
     {
       printf("%s has an out of range value [20, 24, 30, 40, 60, 120]\n\r", name);
     }
@@ -3502,9 +3732,37 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
   }
 
   /*
-   * RTTNOM: available for DDR3 and DDR4
+   * RTTWR: available for DDR3
    */
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
+#if STM32MP_DDR3_TYPE
+  strcpy(impedance, "RTTWR");
+  if (!strcmp(name, impedance))
+  {
+    found = true;
+    for (i = 0; i < MAX_RTTWR; i++)
+    {
+      if (value == rttwr_ohms[i])
+      {
+        config->p_uim.mr2[0] &= RTTWR_MASK_2;
+        config->p_uim.mr2[0] |= rttwr_data[i] << RTTWR_SHIFT_2;
+        config->c_reg.INIT4 &= RTTWR_MASK_1;
+        config->c_reg.INIT4 |= rttwr_data[i] << RTTWR_SHIFT_1;
+        print_impedance(impedance, value);
+        break;
+      }
+    }
+
+    if (i == MAX_RTTWR)
+    {
+      printf("%s has an out of range value [0, 60, 120]\n\r", name);
+    }
+  }
+#endif /* STM32MP_DDR3_TYPE */
+
+  /*
+   * RTTNOM: available for DDR4
+   */
+#if STM32MP_DDR4_TYPE
   strcpy(impedance, "RTTNOM");
   if (!strcmp(name, impedance))
   {
@@ -3517,12 +3775,10 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
         config->p_uim.mr1[0] |= rttnom_data[i];
         config->c_reg.INIT3 &= RTTNOM_MASK;
         config->c_reg.INIT3 |= rttnom_data[i];
-#if STM32MP_DDR4_TYPE
         config->p_uim.mr5[0] &= RTTPARK_MASK;
         config->p_uim.mr5[0] |= rttpark_data[i];
         config->c_reg.INIT6 &= RTTPARK_MASK;
         config->c_reg.INIT6 |= rttpark_data[i];
-#endif /* STM32MP_DDR4_TYPE */
         print_impedance(impedance, value);
         break;
       }
@@ -3530,14 +3786,10 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
 
     if (i == MAX_RTTNOM)
     {
-#if STM32MP_DDR3_TYPE
-      printf("%s has an out of range value [0, 20, 34, 40, 60, 120]\n\r", name);
-#else /* STM32MP_DDR4_TYPE */
       printf("%s has an out of range value [0, 34, 40, 48, 60, 80, 120, 240]\n\r", name);
-#endif /* STM32MP_DDR3_TYPE */
     }
   }
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
+#endif /* STM32MP_DDR4_TYPE */
 
   /*
    * RON: available for DDR3
@@ -3599,12 +3851,25 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
 
   /*
    * DQODT: available for LPDDR4
+   *        dependency with TX
    */
 #if STM32MP_LPDDR4_TYPE
   strcpy(impedance, "DQODT");
   if (!name || !strcmp(name, impedance))
   {
+    int j;
+
     found = true;
+
+    /* Get TX index */
+    for (j = 0; j < MAX_TX; j++)
+    {
+      if ((uint32_t)config->p_uia.tximpedance[0] == tx_ohms[j])
+      {
+        break;
+      }
+    }
+
     for (i = 0; i < MAX_DQODT; i++)
     {
       if (value == dqodt_ohms[i])
@@ -3613,12 +3878,16 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
         config->p_uim.mr11[0] |= dqodt_data[i] << DQODT_SHIFT_2;
         config->c_reg.INIT6 &= DQODT_MASK_1;
         config->c_reg.INIT6 |= dqodt_data[i] << DQODT_SHIFT_1;
+        config->p_uim.mr14[0] &= TX_MASK;
+        config->p_uim.mr14[0] |= tx_data[i][j];
+        config->c_reg.INIT7 &= TX_MASK;
+        config->c_reg.INIT7 |= tx_data[i][j];
         print_impedance(impedance, value);
         break;
       }
     }
 
-    if (i == MAX_DQODT)
+    if ((i == MAX_DQODT) || (j == MAX_TX))
     {
       printf("%s has an out of range value [0, 40, 48, 60, 80, 120, 240]\n\r", name);
     }
@@ -3649,6 +3918,94 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
     if (i == MAX_PDDS)
     {
       printf("%s has an out of range value [40, 48, 60, 80, 120, 240]\n\r", name);
+    }
+  }
+#endif /* STM32MP_LPDDR4_TYPE */
+
+  /*
+   * ATX: available for LPDDR4
+   *      dependency with CAODT
+   */
+#if STM32MP_LPDDR4_TYPE
+  strcpy(impedance, "ATX");
+  if (!strcmp(name, impedance))
+  {
+    int j;
+
+    found = true;
+
+    /* Get CAODT index */
+    for (j = 0; j < MAX_CAODT; j++)
+    {
+      if (((((uint32_t)config->p_uim.mr11[0] & ~CAODT_MASK_2) >> CAODT_SHIFT_2) == caodt_data[j]) &&
+          ((((uint32_t)config->c_reg.INIT6 & ~CAODT_MASK_1) >> CAODT_SHIFT_1) == caodt_data[j]))
+      {
+        break;
+      }
+    }
+
+    for (i = 0; i < MAX_ATX; i++)
+    {
+      if (value == atx_ohms[i])
+      {
+        config->p_uia.atximpedance = (int32_t)value;
+        config->p_uim.mr12[0] &= ATX_MASK;
+        config->p_uim.mr12[0] |= atx_data[j][i];
+        config->c_reg.INIT6 &= ATX_MASK;
+        config->c_reg.INIT6 |= atx_data[j][i];
+        print_impedance(impedance, value);
+        break;
+      }
+    }
+
+    if ((i == MAX_ATX) || (j == MAX_DQODT))
+    {
+      printf("%s has an out of range value [20, 24, 30, 40, 60, 120]\n\r", name);
+    }
+  }
+#endif /* STM32MP_LPDDR4_TYPE */
+
+  /*
+   * CAODT: available for LPDDR4
+   *        dependency with ATX
+   */
+#if STM32MP_LPDDR4_TYPE
+  strcpy(impedance, "CAODT");
+  if (!name || !strcmp(name, impedance))
+  {
+    int j;
+
+    found = true;
+
+    /* Get ATX index */
+    for (j = 0; j < MAX_ATX; j++)
+    {
+      if ((uint32_t)config->p_uia.atximpedance == atx_ohms[j])
+      {
+        break;
+      }
+    }
+
+    for (i = 0; i < MAX_CAODT; i++)
+    {
+      if (value == caodt_ohms[i])
+      {
+        config->p_uim.mr11[0] &= CAODT_MASK_2;
+        config->p_uim.mr11[0] |= caodt_data[i] << CAODT_SHIFT_2;
+        config->c_reg.INIT6 &= CAODT_MASK_1;
+        config->c_reg.INIT6 |= caodt_data[i] << CAODT_SHIFT_1;
+        config->p_uim.mr12[0] &= ATX_MASK;
+        config->p_uim.mr12[0] |= atx_data[i][j];
+        config->c_reg.INIT6 &= ATX_MASK;
+        config->c_reg.INIT6 |= atx_data[i][j];
+        print_impedance(impedance, value);
+        break;
+      }
+    }
+
+    if ((i == MAX_CAODT) || (j == MAX_ATX))
+    {
+      printf("%s has an out of range value [0, 40, 48, 60, 80, 120, 240]\n\r", name);
     }
   }
 #endif /* STM32MP_LPDDR4_TYPE */

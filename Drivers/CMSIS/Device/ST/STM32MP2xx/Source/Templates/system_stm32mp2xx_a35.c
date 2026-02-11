@@ -1172,10 +1172,11 @@ uint32_t SystemA35_TZ_STGEN_Start( uint32_t ck_ker_clk_freq )
    /* Set STGEN frequency value in dedicated register */
    STGENC->CNTFID0 = ck_ker_clk_freq;
 
+#if !defined(A35_STARTUP_IN_ARM_MODE)
    /* Set DBGMCU_CRA35 to halt timestamp generation on debug */
    /* by setting its bit 1 "DBG_STGEN_STOP" */
    DBGMCU->CRA35 |= DBGMCU_CRA35_DBG_STGEN_STOP;
-
+#endif /* !A35_STARTUP_IN_ARM_MODE */
    /* - if it has not been done already, start STGENC */
    /*   by setting CNTCR bit 0 "EN" */
    /*   and bit 1 "HDBG" (to halt timestamp generation on debug) */

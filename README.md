@@ -9,7 +9,7 @@ This document describes:
 
 ## 1 STM32DDRFW-UTIL Architecture and Design
 
-STM32DDRFW-UTIL v1.4.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
+STM32DDRFW-UTIL v1.5.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
 
 ### 1.1 Package overview
 
@@ -360,7 +360,7 @@ This section describes how to compile and launch these projects in STM32CubeIDE.
 
 	- <span style="color: red;">Extra procedures <span style="color: blue;">(marked in blue below)</span> must complete nominal ones.</span>
 
-The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 2.0 release</span>.
+The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 2.1.0 release</span>.
 
 #### 2.2.1 Import the project in STM32CubeIDE
 
@@ -567,9 +567,10 @@ DDR>save
 
 This algorithm has been developed to guide user through TX impedance tuning which depends on the following trio: SoC, DDR and layout. Here are the focused impedance names depending on the DDR type:
 
-- DDR3 and DDR4: TX (TX drive impedance) and RTTNOM (nominal on-die termination [ODT])
-	+ on DDR4, we suppose RTTWR (dynamic ODT) is always equal to 0.
-	+ still on DDR4, we suppose RTTPARK (parked ODT) is always equal to RTTNOM.
+- DDR3: TX (TX drive impedance) and RTTWR (dynamic on-die termination [ODT])
+- DDR4: TX (TX drive impedance) and RTTNOM (nominal ODT)
+	+ we suppose RTTWR (dynamic ODT) is always equal to 0.
+	+ we suppose RTTPARK (parked ODT) is always equal to RTTNOM.
 - LPDDR4: TX and DQODT (data line ODT)
 
 This scenario parses all the considered TX impedance combinations and measure for each of them the bidirectional delay margins on all data strobe lines (DQS) with successful stress tests. For each combination, re-entrance is used to go back to step 0, update impedance values and go back to step 3 (i.e. execute the training sequence). The results are then displayed in a 2D eye diagram to provide a visual illustration of the board performances.
@@ -614,7 +615,7 @@ case 15/15:  TX = 060 Ohms, RTTNOM = 080 Ohms
 As shown on the example above, non-robust impedance couples can lead to errors even on the nominal case (without changing any margin). The higher the result is, the better the eye opening is.
 The goal is only to propose a trend to the user. The impedance values can then be modified inside the settings (with the dedicated command in step 0) to allow user to further explore the tests.
 
-###### 2.3.1.3.1 RX impedance eye diagram
+###### 2.3.1.3.2 RX impedance eye diagram
 
 This is the same algorithm as in previous section, but applied to RX impedances:
 

@@ -27,9 +27,32 @@ From project settings points of view, user has only to add the necessary driverâ
 # Update History
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section0" checked aria-hidden="true">
+<input type="checkbox" id="collapse-section1" checked aria-hidden="true">
+<label for="collapse-section1" aria-hidden="true">__V1.3.0 / 02-Feb-2026__</label>
+<div>
+
+## Main Changes
+
+**v1.3.0 release** of STMP32MP215F-DK BSP
+
+## Contents
+
+- fix(MP21): bank clocks disabled because scmi would be used
+
+
+
+## Notes
+
+stm32mp215f_disco_conf_template.h file must be copied in user application as >stm32mp215f_disco_conf.h with optional configuration update
+
+</div>
+:::
+
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section0" aria-hidden="true">
 <label for="collapse-section0" aria-hidden="true">__V1.2.0 / 30-May-2025__</label>
-<div>			
+<div>
 
 ## Main Changes
 

@@ -30,40 +30,8 @@ extern char remote_argv1[];
 extern int remote_argc;
 extern int remote_cmd;
 extern uint32_t remote_impedance;
-extern uint32_t tx_idx;
-extern uint32_t odt_idx;
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-extern uint32_t rttnom_idx;
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-#if STM32MP_DDR3_TYPE
-extern uint32_t ron_idx;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-extern uint32_t odi_idx;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-extern uint32_t dqodt_idx;
-extern uint32_t pdds_idx;
-#endif /* STM32MP_LPDDR4_TYPE */
-
-
 extern uint32_t save_test_id;
 extern uint32_t save_idx;
-extern uint32_t save_tx_idx;
-extern uint32_t save_odt_idx;
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-extern uint32_t save_rttnom_idx;
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-#if STM32MP_DDR3_TYPE
-extern uint32_t save_ron_idx;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-extern uint32_t save_odi_idx;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-extern uint32_t save_dqodt_idx;
-extern uint32_t save_pdds_idx;
-#endif
 extern uint32_t stage_in_test;
 extern uint32_t back_to_test;
 

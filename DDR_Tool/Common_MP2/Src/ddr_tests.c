@@ -43,28 +43,10 @@ uint32_t remote_impedance = 0;
 
 uint32_t save_test_id = 0;
 uint32_t save_idx = 0;
-uint32_t save_tx_idx = 0;
-uint32_t save_odt_idx = 0;
-uint32_t initial_tx = 0;
-uint32_t initial_odt = 0;
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-uint32_t save_rttnom_idx = 0;
-uint32_t initial_rttnom = 0;
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-#if STM32MP_DDR3_TYPE
-uint32_t save_ron_idx = 0;
-uint32_t initial_ron = 0;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-uint32_t save_odi_idx = 0;
-uint32_t initial_odi = 0;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-uint32_t save_dqodt_idx = 0;
-uint32_t save_pdds_idx = 0;
-uint32_t initial_dqodt = 0;
-uint32_t initial_pdds = 0;
-#endif
+uint32_t save_zphy_idx = 0;
+uint32_t initial_zphy = 0;
+uint32_t save_zmem_idx = 0;
+uint32_t initial_zmem = 0;
 uint32_t stage_in_test = 0;
 uint32_t back_to_test = 0;
 bool initial_done = false;
@@ -1935,55 +1917,56 @@ uint32_t DDR_Test_Infinite_read(unsigned long pattern_in, unsigned long addr_in)
 #endif
 
 /*
- * Some impedance values can be excluded from DDR_Test_TXComputeDelayMargins
- * and DDR_Test_RXComputeDelayMargins scenarios.
+ * Some impedance values can be excluded from ComputeDelayMargins scenarios.
  * Globally extreme values that brings high/low current intensities.
  * Min/Max indexes correspond to constant arrays defined in the DDR driver.
  */
-#define MIN_TX_IDX 2 /* 30 Ohms */
-#define MAX_TX_IDX 4 /* 60 Ohms */
-#define MAX_TX_CASES (MAX_TX_IDX - MIN_TX_IDX + 1)
-#define MIN_ODT_IDX 4  /* 37 Ohms */
-#define MAX_ODT_IDX 14 /* 160 Ohms */
-#define MAX_ODT_CASES (MAX_ODT_IDX - MIN_ODT_IDX + 1)
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
+#define TX_ZPHY_NAME "TX"
+#define MIN_TX_ZPHY_IDX 2 /* TX 30 Ohms */
+#define MAX_TX_ZPHY_IDX 4 /* TX 60 Ohms */
+#define MAX_TX_ZPHY_CASES (MAX_TX_ZPHY_IDX - MIN_TX_ZPHY_IDX + 1)
 #if STM32MP_DDR3_TYPE
-#define MIN_RTTNOM_IDX 0 /* disabled */
-#define MAX_RTTNOM_IDX 5 /* 120 Ohms */
-#else /* STM32MP_DDR4_TYPE */
-#define MIN_RTTNOM_IDX 1 /* 34 Ohms */
-#define MAX_RTTNOM_IDX 5 /* 80 Ohms */
-#endif /* STM32MP_DDR3_TYPE */
-#define MAX_RTTNOM_CASES (MAX_RTTNOM_IDX - MIN_RTTNOM_IDX + 1)
-#define MAX_DATA_TX_CASES (MAX_TX_CASES * MAX_RTTNOM_CASES)
-uint32_t data_tx_delay_margins[MAX_TX_CASES][MAX_RTTNOM_CASES] = { 0 };
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
+#define TX_ZMEM_NAME "RTTWR"
+#define MIN_TX_ZMEM_IDX 0 /* RTTWR disabled */
+#define MAX_TX_ZMEM_IDX 2 /* RTTWR120 Ohms */
+#elif STM32MP_DDR4_TYPE
+#define TX_ZMEM_NAME "RTTNOM"
+#define MIN_TX_ZMEM_IDX 1 /* RTTNOM 34 Ohms */
+#define MAX_TX_ZMEM_IDX 5 /* RTTNOM 80 Ohms */
+#else /* STM32MP_LPDDR4_TYPE */
+#define TX_ZMEM_NAME "DQODT"
+#define MIN_TX_ZMEM_IDX 1 /* DQODT 40 Ohms */
+#define MAX_TX_ZMEM_IDX 4 /* DQODT 80 Ohms */
+#endif
+#define MAX_TX_ZMEM_CASES (MAX_TX_ZMEM_IDX - MIN_TX_ZMEM_IDX + 1)
+#define MAX_DATA_TX_CASES (MAX_TX_ZPHY_CASES * MAX_TX_ZMEM_CASES)
+
+#define RX_ZPHY_NAME "ODT"
+#define MIN_RX_ZPHY_IDX 4  /* ODT 37 Ohms */
+#define MAX_RX_ZPHY_IDX 14 /* ODT 160 Ohms */
+#define MAX_RX_ZPHY_CASES (MAX_RX_ZPHY_IDX - MIN_RX_ZPHY_IDX + 1)
 #if STM32MP_DDR3_TYPE
-#define MIN_RON_IDX 0 /* 34 Ohms */
-#define MAX_RON_IDX 1 /* 40 Ohms */
-#define MAX_RON_CASES (MAX_RON_IDX - MIN_RON_IDX + 1)
-#define MAX_DATA_RX_CASES (MAX_ODT_CASES * MAX_RON_CASES)
-uint32_t data_rx_delay_margins[MAX_ODT_CASES][MAX_RON_CASES] = { 0 };
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-#define MIN_ODI_IDX 0 /* 34 Ohms */
-#define MAX_ODI_IDX 1 /* 48 Ohms */
-#define MAX_ODI_CASES (MAX_ODI_IDX - MIN_ODI_IDX + 1)
-#define MAX_DATA_RX_CASES (MAX_ODT_CASES * MAX_ODI_CASES)
-uint32_t data_rx_delay_margins[MAX_ODT_CASES][MAX_ODI_CASES] = { 0 };
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_LPDDR4_TYPE
-#define MIN_DQODT_IDX 1 /* 40 Ohms */
-#define MAX_DQODT_IDX 4 /* 80 Ohms */
-#define MAX_DQODT_CASES (MAX_DQODT_IDX - MIN_DQODT_IDX + 1)
-#define MAX_DATA_TX_CASES (MAX_TX_CASES * MAX_DQODT_CASES)
-uint32_t data_tx_delay_margins[MAX_TX_CASES][MAX_DQODT_CASES] = { 0 };
-#define MIN_PDDS_IDX 0 /* 40 Ohms */
-#define MAX_PDDS_IDX 3 /* 80 Ohms */
-#define MAX_PDDS_CASES (MAX_PDDS_IDX - MIN_PDDS_IDX + 1)
-#define MAX_DATA_RX_CASES (MAX_ODT_CASES * MAX_PDDS_CASES)
-uint32_t data_rx_delay_margins[MAX_ODT_CASES][MAX_PDDS_CASES] = { 0 };
-#endif /* STM32MP_LPDDR4_TYPE */
+#define RX_ZMEM_NAME "RON"
+#define MIN_RX_ZMEM_IDX 0 /* RON 34 Ohms */
+#define MAX_RX_ZMEM_IDX 1 /* RON 40 Ohms */
+#elif STM32MP_DDR4_TYPE
+#define RX_ZMEM_NAME "ODI"
+#define MIN_RX_ZMEM_IDX 0 /* ODI 34 Ohms */
+#define MAX_RX_ZMEM_IDX 1 /* ODI 48 Ohms */
+#else /* STM32MP_LPDDR4_TYPE */
+#define RX_ZMEM_NAME "PDDS"
+#define MIN_RX_ZMEM_IDX 0 /* PDDS 40 Ohms */
+#define MAX_RX_ZMEM_IDX 3 /* PDDS 80 Ohms */
+#endif
+#define MAX_RX_ZMEM_CASES (MAX_RX_ZMEM_IDX - MIN_RX_ZMEM_IDX + 1)
+#define MAX_DATA_RX_CASES (MAX_RX_ZPHY_CASES * MAX_RX_ZMEM_CASES)
+
+#define MAXI(a, b) ((a) > (b) ? (a) : (b))
+uint32_t delay_margins[MAXI(MAX_TX_ZPHY_CASES, MAX_RX_ZPHY_CASES)]
+                      [MAXI(MAX_TX_ZMEM_CASES, MAX_RX_ZMEM_CASES)] = { 0 };
+
+#define TX_DELAY_MARGINS 1
+#define RX_DELAY_MARGINS 2
 
 #ifdef STM32MP_DDR_16_BIT_INTERFACE
 #define NB_DQS 2
@@ -1993,9 +1976,144 @@ uint32_t data_rx_delay_margins[MAX_ODT_CASES][MAX_PDDS_CASES] = { 0 };
 
 #define DDRPHYC_RXCLKDLY_OFFSET        0x40230
 #define DDRPHYC_TXDQSDLY_OFFSET        0x40340
-#define DDRPHYC_R_OFFSET               0x400
-#define DDRPHYC_DBYTE_OFFSET           0x4000
 #define DDRPHYC_MICROCONTMUXSEL_OFFSET 0x340000
+
+#define DDRPHYC_RXCLKDLY_MASK          0x3F
+#define DDRPHYC_TXDQSDLY_MASK          0x3FF
+
+#define DDRPHYC_DBYTE_OFFSET           0x4000
+
+static uint32_t get_min_zphy_idx(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return MIN_TX_ZPHY_IDX;
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return MIN_RX_ZPHY_IDX;
+  }
+}
+
+static uint32_t get_max_zphy_idx(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return MAX_TX_ZPHY_IDX;
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return MAX_RX_ZPHY_IDX;
+  }
+}
+
+static uint32_t get_min_zmem_idx(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return MIN_TX_ZMEM_IDX;
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return MIN_RX_ZMEM_IDX;
+  }
+}
+
+static uint32_t get_max_zmem_idx(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return MAX_TX_ZMEM_IDX;
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return MAX_RX_ZMEM_IDX;
+  }
+}
+
+static uint32_t get_max_zmem_cases(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return MAX_TX_ZMEM_CASES;
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return MAX_RX_ZMEM_CASES;
+  }
+}
+
+static uint32_t get_max_data_cases(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return MAX_DATA_TX_CASES;
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return MAX_DATA_RX_CASES;
+  }
+}
+
+static uint32_t *get_zphy_ohms_pointer(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    return (uint32_t *)&tx_ohms[0];
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    return (uint32_t *)&odt_ohms[0];
+  }
+}
+
+static uint32_t *get_zmem_ohms_pointer(uint32_t mode)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+#if STM32MP_DDR3_TYPE
+    return (uint32_t *)&rttwr_ohms[0];
+#elif STM32MP_DDR4_TYPE
+    return (uint32_t *)&rttnom_ohms[0];
+#else /* STM32MP_LPDDR4_TYPE */
+    return (uint32_t *)&dqodt_ohms[0];
+#endif
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+#if STM32MP_DDR3_TYPE
+    return (uint32_t *)&ron_ohms[0];
+#elif STM32MP_DDR4_TYPE
+    return (uint32_t *)&odi_ohms[0];
+#else /* STM32MP_LPDDR4_TYPE */
+    return (uint32_t *)&pdds_ohms[0];
+#endif
+  }
+}
+
+static void get_zphy_name(uint32_t mode, char *name)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    sprintf(name, "%s%c", TX_ZPHY_NAME, (char)'\0');
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    sprintf(name, "%s%c", RX_ZPHY_NAME, (char)'\0');
+  }
+}
+
+static void get_zmem_name(uint32_t mode, char *name)
+{
+  if (mode == TX_DELAY_MARGINS)
+  {
+    sprintf(name, "%s%c", TX_ZMEM_NAME, (char)'\0');
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    sprintf(name, "%s%c", RX_ZMEM_NAME, (char)'\0');
+  }
+}
 
 static void Remote_Do_Step(HAL_DDR_InteractStepTypeDef step)
 {
@@ -2032,42 +2150,375 @@ static bool Remote_Do_Impedance_Read(char *name)
   return HAL_DDR_Interactive(STEP_DDR_READY);
 }
 
-static uint32_t read_txdqsdly(uint32_t idx)
+static uint32_t read_dly(uint32_t mode, uint32_t idx)
 {
   uint32_t result;
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
-  result = READ_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_TXDQSDLY_OFFSET +
-                                           (idx * DDRPHYC_DBYTE_OFFSET)));
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+
+  if (mode == TX_DELAY_MARGINS)
+  {
+    /* read_txdqsdly */
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
+    result = READ_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_TXDQSDLY_OFFSET +
+                                             (idx * DDRPHYC_DBYTE_OFFSET)));
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    /* read_rxclkdly */
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
+    result = READ_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_RXCLKDLY_OFFSET +
+                                             (idx * DDRPHYC_DBYTE_OFFSET)));
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+  }
 
   return result;
 }
 
-static void write_txdqsdly(uint32_t idx, uint32_t value)
+static bool write_dly(uint32_t mode, uint32_t idx, uint32_t value)
 {
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_TXDQSDLY_OFFSET +
-                                   (idx * DDRPHYC_DBYTE_OFFSET)), value);
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+  if (mode == TX_DELAY_MARGINS)
+  {
+    /* write_txdqsdly */
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_TXDQSDLY_OFFSET +
+                                     (idx * DDRPHYC_DBYTE_OFFSET)), value);
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+
+    if ((value <= 1) || (value >= (DDRPHYC_TXDQSDLY_MASK -1)))
+    {
+      return false;
+    }
+  }
+  else /* RX_DELAY_MARGINS */
+  {
+    /* write_rxclkdly */
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_RXCLKDLY_OFFSET +
+                                     (idx * DDRPHYC_DBYTE_OFFSET)), value);
+    WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+
+    if ((value <= 1) || (value >= (DDRPHYC_RXCLKDLY_MASK -1)))
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
-static uint32_t read_rxclkdly(uint32_t idx)
+static uint32_t ComputeDelayMargins(uint32_t mode)
 {
-  uint32_t result;
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
-  result = READ_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_RXCLKDLY_OFFSET +
-                                           (idx * DDRPHYC_DBYTE_OFFSET)));
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+  uint32_t test_id = 0;
+  uint32_t idx = 0;
+  uint32_t zphy_idx = 0;
+  uint32_t zmem_idx = 0;
+  uint32_t dqs_idx;
+  uint32_t ret = 0;
+  uint32_t *zphy_ohms = get_zphy_ohms_pointer(mode);
+  uint32_t *zmem_ohms = get_zmem_ohms_pointer(mode);
+  char zphy_name[8] = "\0";
+  char zmem_name[8] = "\0";
 
-  return result;
-}
+  get_zphy_name(mode, zphy_name);
+  get_zmem_name(mode, zmem_name);
 
-static void write_rxclkdly(uint32_t idx, uint32_t value)
-{
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 0U);
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_RXCLKDLY_OFFSET +
-                                   (idx * DDRPHYC_DBYTE_OFFSET)), value);
-  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHYC_MICROCONTMUXSEL_OFFSET), 1U);
+  test_id = mode;
+  save_test_id = mode;
+
+  /*
+   * Check if test has been interrupted to process step/impedance commands.
+   * If yes, restore indexes and jump to continue processing.
+   */
+  if (stage_in_test != 0)
+  {
+    test_id = save_test_id;
+    idx = save_idx;
+    zphy_idx = save_zphy_idx;
+    zmem_idx = save_zmem_idx;
+
+    if (stage_in_test == 1)
+    {
+      /* Jump after first step transition (STEP_DDR_READY -> STEP_DDR_RESET) */
+      goto stage_in_test_1;
+    }
+    if (stage_in_test == 2)
+    {
+      /* Jump after second step transition (STEP_DDR_RESET -> STEP_DDR_READY) */
+      goto stage_in_test_2;
+    }
+    if (stage_in_test == 3)
+    {
+      /* Jump after third step transition (STEP_DDR_READY -> STEP_DDR_RESET) */
+      goto stage_in_test_3;
+    }
+    if (stage_in_test == 4)
+    {
+      /* Jump after fourth step transition (STEP_DDR_RESET -> STEP_DDR_READY) */
+      goto stage_in_test_4;
+    }
+  }
+
+  silent_console = true;
+
+  /*
+   * Read impedance values before starting the algorithm.
+   * They will be restored after the processing.
+   */
+  if (!initial_done)
+  {
+    if (Remote_Do_Impedance_Read(zphy_name))
+    {
+      printf("impedance %s read error\n\r", zphy_name);
+      ret = 1;
+      goto computedelaymargins_end;
+    }
+    initial_zphy = remote_impedance;
+
+    if (Remote_Do_Impedance_Read(zmem_name))
+    {
+      printf("impedance %s read error\n\r", zmem_name);
+      ret = 1;
+      goto computedelaymargins_end;
+    }
+    initial_zmem = remote_impedance;
+
+    initial_done = true;
+  }
+
+  for (zphy_idx = get_min_zphy_idx(test_id);
+       zphy_idx <= get_max_zphy_idx(test_id);
+       zphy_idx++)
+  {
+    for (zmem_idx = get_min_zmem_idx(test_id);
+	 zmem_idx <= get_max_zmem_idx(test_id);
+	 zmem_idx++)
+    {
+      idx = ((zphy_idx - get_min_zphy_idx(test_id)) * get_max_zmem_cases(test_id)) +
+            (zmem_idx - get_min_zmem_idx(test_id));
+
+      printf("case %02u/%02u:  %s = %03u Ohms, %s = %03u Ohms\n\r",
+             idx + 1, get_max_data_cases(test_id), zphy_name, zphy_ohms[zphy_idx],
+             zmem_name, zmem_ohms[zmem_idx]);
+
+      /* Go to RESET state, necessary to change settings */
+      Remote_Do_Step(STEP_DDR_RESET);
+
+      /* Save indexes before the next execution break during step change */
+      save_test_id = test_id;
+      save_idx = idx;
+      save_zphy_idx = zphy_idx;
+      save_zmem_idx = zmem_idx;
+      stage_in_test = 1;
+      return 0;
+
+stage_in_test_1:
+      stage_in_test = 0;
+
+      /* Set all impedances according to loop indexes */
+      if (!Remote_Do_Impedance_Write(zphy_name, zphy_ohms[zphy_idx]) ||
+          !Remote_Do_Impedance_Write(zmem_name, zmem_ohms[zmem_idx]))
+      {
+        printf("impedance write error\n\r");
+        ret = 1;
+        goto computedelaymargins_end;
+      }
+
+      /* Go back to READY state, necessary to make tests */
+      Remote_Do_Step(STEP_DDR_READY);
+
+      /* New execution break during step change */
+      stage_in_test = 2;
+      return 0;
+
+stage_in_test_2:
+      stage_in_test = 0;
+
+      if (DDR_Test_All(0, 0, 0) != 0)
+      {
+        printf("current impedance configuration not functional\n\r");
+        continue;
+      }
+
+      delay_margins[zphy_idx - get_min_zphy_idx(test_id)]
+                   [zmem_idx - get_min_zmem_idx(test_id)] = 0;
+
+      for (dqs_idx = 0; dqs_idx < NB_DQS; dqs_idx++)
+      {
+        uint32_t dly;
+        uint32_t inc_dly_offset = 0;
+        uint32_t dec_dly_offset = 0;
+        bool failure_detected = false;
+
+        /* read initial DQS delay generated by the training */
+        dly = read_dly(test_id, dqs_idx);
+
+        /* Get delay margin by incrementation */
+        do
+        {
+          inc_dly_offset += 2;
+          if (!write_dly(test_id, dqs_idx, dly + inc_dly_offset))
+          {
+            /* The high limit is reached, end the parsing */
+            failure_detected = true;
+          }
+
+          valid_delay_us(1000);
+
+          if (DDR_Test_All(0, 0, 0) != 0)
+          {
+            inc_dly_offset--;
+            write_dly(test_id, dqs_idx, dly + inc_dly_offset);
+
+            if (DDR_Test_All(0, 0, 0) != 0)
+            {
+              inc_dly_offset--;
+            }
+
+            failure_detected = true;
+          }
+        }
+        while (!failure_detected);
+
+        /* restore initial DQS delay generated by the training */
+        write_dly(test_id, dqs_idx, dly);
+
+        failure_detected = false;
+
+        /* Get delay margin by decrementation */
+        do
+        {
+          dec_dly_offset += 2;
+          if (!write_dly(test_id, dqs_idx, dly - dec_dly_offset))
+          {
+            /* The low limit is reached, end the parsing */
+            failure_detected = true;
+          }
+
+          valid_delay_us(1000);
+
+          if (DDR_Test_All(0, 0, 0) != 0)
+          {
+            dec_dly_offset--;
+            write_dly(test_id, dqs_idx, dly - dec_dly_offset);
+
+            if (DDR_Test_All(0, 0, 0) != 0)
+            {
+              dec_dly_offset--;
+            }
+
+            failure_detected = true;
+          }
+        }
+        while (!failure_detected);
+
+        /* restore initial DQS delay generated by the training */
+        write_dly(test_id, dqs_idx, dly);
+
+        if (inc_dly_offset > dec_dly_offset)
+        {
+          delay_margins[zphy_idx - get_min_zphy_idx(test_id)]
+                       [zmem_idx - get_min_zmem_idx(test_id)] +=
+          dec_dly_offset;
+        }
+        else
+        {
+          delay_margins[zphy_idx - get_min_zphy_idx(test_id)]
+                       [zmem_idx - get_min_zmem_idx(test_id)] +=
+          inc_dly_offset;
+        }
+      } /* dqs_idx */
+    } /* zmem_idx */
+  } /* zphy_idx */
+
+  /* Display results in a 2D eye diagram */
+  printf ("\n\r %s |\n\r", zphy_name);
+
+  for (zphy_idx = get_min_zphy_idx(test_id);
+       zphy_idx <= (get_max_zphy_idx(test_id) + 3);
+       zphy_idx++)
+  {
+    char output[64] = "\0";
+
+    if (zphy_idx >= (get_max_zphy_idx(test_id) + 1))
+    {
+      sprintf(output, "     ");
+
+      if (zphy_idx >= (get_max_zphy_idx(test_id) + 2))
+      {
+        sprintf(output + strlen(output), " ");
+      }
+      else
+      {
+        sprintf(output + strlen(output), "|");
+      }
+    }
+    else
+    {
+      sprintf(output, " %03u |", zphy_ohms[zphy_idx]);
+    }
+
+    for (zmem_idx = get_min_zmem_idx(test_id);
+         zmem_idx <= get_max_zmem_idx(test_id);
+         zmem_idx++)
+    {
+      if (zphy_idx == (get_max_zphy_idx(test_id) + 3))
+      {
+        sprintf(output + strlen(output), " %s", zmem_name);
+	break;
+      }
+      else if (zphy_idx == (get_max_zphy_idx(test_id) + 2))
+      {
+        sprintf(output + strlen(output), " %03u  ", zmem_ohms[zmem_idx]);
+      }
+      else if (zphy_idx == (get_max_zphy_idx(test_id) + 1))
+      {
+        sprintf(output + strlen(output), "______");
+      }
+      else
+      {
+        sprintf(output + strlen(output), "  %02u  ",
+                delay_margins[zphy_idx - get_min_zphy_idx(test_id)]
+                             [zmem_idx - get_min_zmem_idx(test_id)]);
+      }
+    } /* zmem_idx */
+
+    printf("%s\n\r", output);
+  } /* zphy_idx */
+
+  /* Restore initial impedance values */
+  /* Go to RESET state, necessary to change settings */
+  Remote_Do_Step(STEP_DDR_RESET);
+
+  stage_in_test = 3;
+  return 0;
+
+stage_in_test_3:
+  stage_in_test = 0;
+
+  if (!Remote_Do_Impedance_Write(zphy_name, initial_zphy) ||
+      !Remote_Do_Impedance_Write(zmem_name, initial_zmem))
+  {
+    printf("impedance write error\n\r");
+    ret = 1;
+    goto computedelaymargins_end;
+  }
+
+  /* Go back to READY state, necessary to make tests */
+  Remote_Do_Step(STEP_DDR_READY);
+
+  /* New execution break during step change */
+  stage_in_test = 4;
+  return 0;
+
+stage_in_test_4:
+  stage_in_test = 0;
+
+computedelaymargins_end:
+  silent_console = false;
+  save_test_id = 0;
+  initial_done = false;
+
+  return ret;
 }
 
 /**
@@ -2091,363 +2542,7 @@ static void write_rxclkdly(uint32_t idx, uint32_t value)
 */
 uint32_t DDR_Test_TXComputeDelayMargins(void)
 {
-  uint32_t idx = 0;
-  uint32_t tx_idx = 0;
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-  uint32_t rttnom_idx = 0;
-#else /* STM32MP_LPDDR4_TYPE */
-  uint32_t dqodt_idx = 0;
-#endif
-  uint32_t dqs_idx;
-  uint32_t ret = 0;
-
-  save_test_id = 1;
-
-  /*
-   * Check if test has been interrupted to process step/impedance commands.
-   * If yes, restore indexes and jump to continue processing.
-   */
-  if (stage_in_test != 0)
-  {
-    idx = save_idx;
-    tx_idx = save_tx_idx;
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-    rttnom_idx = save_rttnom_idx;
-#else /* STM32MP_LPDDR4_TYPE */
-    dqodt_idx = save_dqodt_idx;
-#endif
-    if (stage_in_test == 1)
-    {
-      /* Jump after first step transition (STEP_DDR_READY -> STEP_DDR_RESET) */
-      goto stage_in_tx_test_1;
-    }
-    if (stage_in_test == 2)
-    {
-      /* Jump after second step transition (STEP_DDR_RESET -> STEP_DDR_READY) */
-      goto stage_in_tx_test_2;
-    }
-    if (stage_in_test == 3)
-    {
-      /* Jump after third step transition (STEP_DDR_READY -> STEP_DDR_RESET) */
-      goto stage_in_tx_test_3;
-    }
-    if (stage_in_test == 4)
-    {
-      /* Jump after fourth step transition (STEP_DDR_RESET -> STEP_DDR_READY) */
-      goto stage_in_tx_test_4;
-    }
-  }
-
-  silent_console = true;
-
-  /*
-   * Read impedance values before starting the algorithm.
-   * They will be restored after the processing.
-   */
-  if (!initial_done)
-  {
-    if (Remote_Do_Impedance_Read("TX"))
-    {
-      printf("impedance TX read error\n\r");
-      ret = 1;
-      goto txcomputedelaymargins_end;
-    }
-    initial_tx = remote_impedance;
-
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-    if (Remote_Do_Impedance_Read("RTTNOM"))
-    {
-      printf("impedance RTTNOM read error\n\r");
-      ret = 1;
-      goto txcomputedelaymargins_end;
-    }
-    initial_rttnom = remote_impedance;
-#else /* STM32MP_LPDDR4_TYPE */
-    if (Remote_Do_Impedance_Read("DQODT"))
-    {
-      printf("impedance DQODT read error\n\r");
-      ret = 1;
-      goto txcomputedelaymargins_end;
-    }
-    initial_dqodt = remote_impedance;
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-
-    initial_done = true;
-  }
-
-  for (tx_idx = MIN_TX_IDX; tx_idx <= MAX_TX_IDX; tx_idx++)
-  {
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-    for (rttnom_idx = MIN_RTTNOM_IDX; rttnom_idx <= MAX_RTTNOM_IDX; rttnom_idx++)
-#else /* STM32MP_LPDDR4_TYPE */
-    for (dqodt_idx = MIN_DQODT_IDX; dqodt_idx <= MAX_DQODT_IDX; dqodt_idx++)
-#endif
-    {
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-      idx = ((tx_idx - MIN_TX_IDX) * MAX_RTTNOM_CASES) + (rttnom_idx - MIN_RTTNOM_IDX);
-      printf("case %02u/%02u:  TX = %03u Ohms, RTTNOM = %03u Ohms\n\r",
-	     idx + 1, MAX_DATA_TX_CASES, tx_ohms[tx_idx], rttnom_ohms[rttnom_idx]);
-#else /* STM32MP_LPDDR4_TYPE */
-      idx = ((tx_idx - MIN_TX_IDX) * MAX_DQODT_CASES) + (dqodt_idx - MIN_DQODT_IDX);
-      printf("case %02u/%02u:  TX = %03u Ohms, DQODT = %03u Ohms\n\r",
-	     idx + 1, MAX_DATA_TX_CASES, tx_ohms[tx_idx], dqodt_ohms[dqodt_idx]);
-#endif
-
-      /* Go to RESET state, necessary to change settings */
-      Remote_Do_Step(STEP_DDR_RESET);
-
-      /* Save indexes before the next execution break during step change */
-      save_idx = idx;
-      save_tx_idx = tx_idx;
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-      save_rttnom_idx = rttnom_idx;
-#else /* STM32MP_LPDDR4_TYPE */
-      save_dqodt_idx = dqodt_idx;
-#endif
-      stage_in_test = 1;
-      return 0;
-
-stage_in_tx_test_1:
-      stage_in_test = 0;
-
-      /* Set all DATA TX impedances according to loop indexes */
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-      if (!Remote_Do_Impedance_Write("TX", tx_ohms[tx_idx]) ||
-          !Remote_Do_Impedance_Write("RTTNOM", rttnom_ohms[rttnom_idx]))
-#else /* STM32MP_LPDDR4_TYPE */
-      if (!Remote_Do_Impedance_Write("TX", tx_ohms[tx_idx]) ||
-          !Remote_Do_Impedance_Write("DQODT", dqodt_ohms[dqodt_idx]))
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-      {
-        printf("impedance write error\n\r");
-        ret = 1;
-        goto txcomputedelaymargins_end;
-      }
-
-      /* Go back to READY state, necessary to make tests */
-      Remote_Do_Step(STEP_DDR_READY);
-
-      /* New execution break during step change */
-      stage_in_test = 2;
-      return 0;
-
-stage_in_tx_test_2:
-      stage_in_test = 0;
-
-      if (DDR_Test_All(0, 0, 0) != 0)
-      {
-        printf("current impedance configuration not functional\n\r");
-        continue;
-      }
-
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-      data_tx_delay_margins[tx_idx - MIN_TX_IDX][rttnom_idx - MIN_RTTNOM_IDX] = 0;
-#else /* STM32MP_LPDDR4_TYPE */
-      data_tx_delay_margins[tx_idx - MIN_TX_IDX][dqodt_idx - MIN_DQODT_IDX] = 0;
-#endif
-
-      for (dqs_idx = 0; dqs_idx < NB_DQS; dqs_idx++)
-      {
-        uint32_t txdqsdly;
-        uint32_t inc_dly_offset = 0;
-        uint32_t dec_dly_offset = 0;
-        bool failure_detected = false;
-
-        /* read initial DQS delay generated by the training */
-        txdqsdly = read_txdqsdly(dqs_idx);
-
-        /* Get delay margin by incrementation */
-        do
-        {
-          inc_dly_offset += 2;
-          write_txdqsdly(dqs_idx, txdqsdly + inc_dly_offset);
-
-          valid_delay_us(1000);
-
-          if (DDR_Test_All(0, 0, 0) != 0)
-          {
-            inc_dly_offset--;
-            write_txdqsdly(dqs_idx, txdqsdly + inc_dly_offset);
-
-            if (DDR_Test_All(0, 0, 0) != 0)
-            {
-              inc_dly_offset--;
-            }
-
-            failure_detected = true;
-          }
-        }
-        while (!failure_detected);
-
-        /* restore initial DQS delay generated by the training */
-        write_txdqsdly(dqs_idx, txdqsdly);
-
-        failure_detected = false;
-
-        /* Get delay margin by decrementation */
-        do
-        {
-          dec_dly_offset += 2;
-          write_txdqsdly(dqs_idx, txdqsdly - dec_dly_offset);
-
-          valid_delay_us(1000);
-
-          if (DDR_Test_All(0, 0, 0) != 0)
-          {
-            dec_dly_offset--;
-            write_txdqsdly(dqs_idx, txdqsdly - dec_dly_offset);
-
-            if (DDR_Test_All(0, 0, 0) != 0)
-            {
-              dec_dly_offset--;
-            }
-
-            failure_detected = true;
-          }
-        }
-        while (!failure_detected);
-
-        /* restore initial DQS delay generated by the training */
-        write_txdqsdly(dqs_idx, txdqsdly);
-
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-        if (inc_dly_offset > dec_dly_offset)
-        {
-          data_tx_delay_margins[tx_idx - MIN_TX_IDX][rttnom_idx - MIN_RTTNOM_IDX] +=
-		  dec_dly_offset;
-        }
-        else
-        {
-          data_tx_delay_margins[tx_idx - MIN_TX_IDX][rttnom_idx - MIN_RTTNOM_IDX] +=
-		  inc_dly_offset;
-        }
-#else /* STM32MP_LPDDR4_TYPE */
-        if (inc_dly_offset > dec_dly_offset)
-        {
-          data_tx_delay_margins[tx_idx - MIN_TX_IDX][dqodt_idx - MIN_DQODT_IDX] +=
-		  dec_dly_offset;
-        }
-        else
-        {
-          data_tx_delay_margins[tx_idx - MIN_TX_IDX][dqodt_idx - MIN_DQODT_IDX] +=
-		  inc_dly_offset;
-        }
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-      } /* dqs_idx */
-    } /* rttnom_idx or dqodt_idx */
-  } /* tx_idx */
-
-  /* Display results in a 2D eye diagram */
-  printf ("\n\r TX  |\n\r");
-  for (tx_idx = MIN_TX_IDX; tx_idx <= (MAX_TX_IDX + 3); tx_idx++)
-  {
-    char output[64] = "\0";
-
-    if (tx_idx >= (MAX_TX_IDX + 1))
-    {
-      sprintf(output, "     ");
-
-      if (tx_idx >= (MAX_TX_IDX + 2))
-      {
-        sprintf(output + strlen(output), " ");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "|");
-      }
-    }
-    else
-    {
-      sprintf(output, " %03u |", tx_ohms[tx_idx]);
-    }
-
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-    for (rttnom_idx = MIN_RTTNOM_IDX; rttnom_idx <= MAX_RTTNOM_IDX; rttnom_idx++)
-    {
-      if (tx_idx == (MAX_TX_IDX + 3))
-      {
-        sprintf(output + strlen(output), " RTTNOM");
-	break;
-      }
-      else if (tx_idx == (MAX_TX_IDX + 2))
-      {
-        sprintf(output + strlen(output), " %03u  ", rttnom_ohms[rttnom_idx]);
-      }
-      else if (tx_idx == (MAX_TX_IDX + 1))
-      {
-        sprintf(output + strlen(output), "______");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "  %02u  ",
-                data_tx_delay_margins[tx_idx - MIN_TX_IDX][rttnom_idx - MIN_RTTNOM_IDX]);
-      }
-    } /* rttnom_idx */
-#else /* STM32MP_LPDDR4_TYPE */
-    for (dqodt_idx = MIN_DQODT_IDX; dqodt_idx <= MAX_DQODT_IDX; dqodt_idx++)
-    {
-      if (tx_idx == (MAX_TX_IDX + 3))
-      {
-        sprintf(output + strlen(output), " DQODT");
-	break;
-      }
-      else if (tx_idx == (MAX_TX_IDX + 2))
-      {
-        sprintf(output + strlen(output), " %03u  ", dqodt_ohms[dqodt_idx]);
-      }
-      else if (tx_idx == (MAX_TX_IDX + 1))
-      {
-        sprintf(output + strlen(output), "______");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "  %02u  ",
-                data_tx_delay_margins[tx_idx - MIN_TX_IDX][dqodt_idx - MIN_DQODT_IDX]);
-      }
-    } /* dqodt_idx */
-#endif
-    printf("%s\n\r", output);
-  } /* tx_idx */
-
-  /* Restore initial impedance values */
-  /* Go to RESET state, necessary to change settings */
-  Remote_Do_Step(STEP_DDR_RESET);
-
-  stage_in_test = 3;
-  return 0;
-
-stage_in_tx_test_3:
-  stage_in_test = 0;
-
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
-  if (!Remote_Do_Impedance_Write("TX", initial_tx) ||
-      !Remote_Do_Impedance_Write("RTTNOM", initial_rttnom))
-#else /* STM32MP_LPDDR4_TYPE */
-  if (!Remote_Do_Impedance_Write("TX", initial_tx) ||
-      !Remote_Do_Impedance_Write("DQODT", initial_dqodt))
-#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
-  {
-    printf("impedance write error\n\r");
-    ret = 1;
-    goto txcomputedelaymargins_end;
-  }
-
-  /* Go back to READY state, necessary to make tests */
-  Remote_Do_Step(STEP_DDR_READY);
-
-  /* New execution break during step change */
-  stage_in_test = 4;
-  return 0;
-
-stage_in_tx_test_4:
-  stage_in_test = 0;
-
-txcomputedelaymargins_end:
-  silent_console = false;
-  save_test_id = 0;
-  initial_done = false;
-
-  return ret;
+  return ComputeDelayMargins(TX_DELAY_MARGINS);
 }
 
 /**
@@ -2471,444 +2566,5 @@ txcomputedelaymargins_end:
 */
 uint32_t DDR_Test_RXComputeDelayMargins(void)
 {
-  uint32_t idx = 0;
-  uint32_t odt_idx = 0;
-#if STM32MP_DDR3_TYPE
-  uint32_t ron_idx = 0;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-  uint32_t odi_idx = 0;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-  uint32_t pdds_idx = 0;
-#endif /* STM32MP_LPDDR4_TYPE */
-  uint32_t dqs_idx;
-  uint32_t ret = 0;
-
-  save_test_id = 2;
-
-  /*
-   * Check if test has been interrupted to process step/impedance commands.
-   * If yes, restore indexes and jump to continue processing.
-   */
-  if (stage_in_test != 0)
-  {
-    idx = save_idx;
-    odt_idx = save_odt_idx;
-#if STM32MP_DDR3_TYPE
-    ron_idx = save_ron_idx;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-    odi_idx = save_odi_idx;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-    pdds_idx = save_pdds_idx;
-#endif /* STM32MP_LPDDR4_TYPE */
-    if (stage_in_test == 1)
-    {
-      /* Jump after first step transition (STEP_DDR_READY -> STEP_DDR_RESET) */
-      goto stage_in_rx_test_1;
-    }
-    if (stage_in_test == 2)
-    {
-      /* Jump after second step transition (STEP_DDR_RESET -> STEP_DDR_READY) */
-      goto stage_in_rx_test_2;
-    }
-    if (stage_in_test == 3)
-    {
-      /* Jump after third step transition (STEP_DDR_READY -> STEP_DDR_RESET) */
-      goto stage_in_rx_test_3;
-    }
-    if (stage_in_test == 4)
-    {
-      /* Jump after fourth step transition (STEP_DDR_RESET -> STEP_DDR_READY) */
-      goto stage_in_rx_test_4;
-    }
-  }
-
-  silent_console = true;
-
-  /*
-   * Read impedance values before starting the algorithm.
-   * They will be restored after the processing.
-   */
-  if (!initial_done)
-  {
-    if (Remote_Do_Impedance_Read("ODT"))
-    {
-      printf("impedance ODT read error\n\r");
-      ret = 1;
-      goto rxcomputedelaymargins_end;
-    }
-    initial_odt = remote_impedance;
-
-#if STM32MP_DDR3_TYPE
-    if (Remote_Do_Impedance_Read("RON"))
-    {
-      printf("impedance RON read error\n\r");
-      ret = 1;
-      goto rxcomputedelaymargins_end;
-    }
-    initial_ron = remote_impedance;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-    if (Remote_Do_Impedance_Read("ODI"))
-    {
-      printf("impedance ODI read error\n\r");
-      ret = 1;
-      goto rxcomputedelaymargins_end;
-    }
-    initial_odi = remote_impedance;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-    if (Remote_Do_Impedance_Read("PDDS"))
-    {
-      printf("impedance PDDS read error\n\r");
-      ret = 1;
-      goto rxcomputedelaymargins_end;
-    }
-    initial_pdds = remote_impedance;
-#endif /* STM32MP_LPDDR4_TYPE */
-
-    initial_done = true;
-  }
-
-  for (odt_idx = MIN_ODT_IDX; odt_idx <= MAX_ODT_IDX; odt_idx++)
-  {
-#if STM32MP_DDR3_TYPE
-    for (ron_idx = MIN_RON_IDX; ron_idx <= MAX_RON_IDX; ron_idx++)
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-    for (odi_idx = MIN_ODI_IDX; odi_idx <= MAX_ODI_IDX; odi_idx++)
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-    for (pdds_idx = MIN_PDDS_IDX; pdds_idx <= MAX_PDDS_IDX; pdds_idx++)
-#endif /* STM32MP_LPDDR4_TYPE */
-    {
-#if STM32MP_DDR3_TYPE
-      idx = ((odt_idx - MIN_ODT_IDX) * MAX_RON_CASES) + (ron_idx - MIN_RON_IDX);
-      printf("case %02u/%02u:  ODT = %03u Ohms, RON = %03u Ohms\n\r",
-	     idx + 1, MAX_DATA_RX_CASES, odt_ohms[odt_idx], ron_ohms[ron_idx]);
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-      idx = ((odt_idx - MIN_ODT_IDX) * MAX_ODI_CASES) + (odi_idx - MIN_ODI_IDX);
-      printf("case %02u/%02u:  ODT = %03u Ohms, ODI = %03u Ohms\n\r",
-	     idx + 1, MAX_DATA_RX_CASES, odt_ohms[odt_idx], odi_ohms[odi_idx]);
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-      idx = ((odt_idx - MIN_ODT_IDX) * MAX_PDDS_CASES) + (pdds_idx - MIN_PDDS_IDX);
-      printf("case %02u/%02u:  ODT = %03u Ohms, PDDS = %03u Ohms\n\r",
-	     idx + 1, MAX_DATA_RX_CASES, odt_ohms[odt_idx], pdds_ohms[pdds_idx]);
-#endif /* STM32MP_LPDDR4_TYPE */
-
-      /* Go to RESET state, necessary to change settings */
-      Remote_Do_Step(STEP_DDR_RESET);
-
-      /* Save indexes before the next execution break during step change */
-      save_idx = idx;
-      save_odt_idx = odt_idx;
-#if STM32MP_DDR3_TYPE
-      save_ron_idx = ron_idx;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-      save_odi_idx = odi_idx;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-      save_pdds_idx = pdds_idx;
-#endif /* STM32MP_LPDDR4_TYPE */
-      stage_in_test = 1;
-      return 0;
-
-stage_in_rx_test_1:
-      stage_in_test = 0;
-
-      /* Set all DATA RX impedances according to loop indexes */
-#if STM32MP_DDR3_TYPE
-      if (!Remote_Do_Impedance_Write("ODT", odt_ohms[odt_idx]) ||
-          !Remote_Do_Impedance_Write("RON", ron_ohms[ron_idx]))
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-      if (!Remote_Do_Impedance_Write("ODT", odt_ohms[odt_idx]) ||
-          !Remote_Do_Impedance_Write("ODI", odi_ohms[odi_idx]))
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-      if (!Remote_Do_Impedance_Write("ODT", odt_ohms[odt_idx]) ||
-          !Remote_Do_Impedance_Write("PDDS", pdds_ohms[pdds_idx]))
-#endif /* STM32MP_LPDDR4_TYPE */
-      {
-        printf("impedance write error\n\r");
-        ret = 1;
-        goto rxcomputedelaymargins_end;
-      }
-
-      /* Go back to READY state, necessary to make tests */
-      Remote_Do_Step(STEP_DDR_READY);
-
-      /* New execution break during step change */
-      stage_in_test = 2;
-      return 0;
-
-stage_in_rx_test_2:
-      stage_in_test = 0;
-
-      if (DDR_Test_All(0, 0, 0) != 0)
-      {
-        printf("current impedance configuration not functional\n\r");
-        continue;
-      }
-
-#if STM32MP_DDR3_TYPE
-      data_rx_delay_margins[odt_idx - MIN_ODT_IDX][ron_idx - MIN_RON_IDX] = 0;
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-      data_rx_delay_margins[odt_idx - MIN_ODT_IDX][odi_idx - MIN_ODI_IDX] = 0;
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-      data_rx_delay_margins[odt_idx - MIN_ODT_IDX][pdds_idx - MIN_PDDS_IDX] = 0;
-#endif /* STM32MP_LPDDR4_TYPE */
-
-      for (dqs_idx = 0; dqs_idx < NB_DQS; dqs_idx++)
-      {
-        uint32_t rxclkdly;
-        uint32_t inc_dly_offset = 0;
-        uint32_t dec_dly_offset = 0;
-        bool failure_detected = false;
-
-        /* read initial DQS delay generated by the training */
-        rxclkdly = read_rxclkdly(dqs_idx);
-
-        /* Get delay margin by incrementation */
-        do
-        {
-          inc_dly_offset += 2;
-          write_rxclkdly(dqs_idx, rxclkdly + inc_dly_offset);
-
-          valid_delay_us(1000);
-
-          if (DDR_Test_All(0, 0, 0) != 0)
-          {
-            inc_dly_offset--;
-            write_rxclkdly(dqs_idx, rxclkdly + inc_dly_offset);
-
-            if (DDR_Test_All(0, 0, 0) != 0)
-            {
-              inc_dly_offset--;
-            }
-
-            failure_detected = true;
-          }
-        }
-        while (!failure_detected);
-
-        /* restore initial DQS delay generated by the training */
-        write_rxclkdly(dqs_idx, rxclkdly);
-
-        failure_detected = false;
-
-        /* Get delay margin by decrementation */
-        do
-        {
-          dec_dly_offset += 2;
-          write_rxclkdly(dqs_idx, rxclkdly - dec_dly_offset);
-
-          valid_delay_us(1000);
-
-          if (DDR_Test_All(0, 0, 0) != 0)
-          {
-            dec_dly_offset--;
-            write_rxclkdly(dqs_idx, rxclkdly - dec_dly_offset);
-
-            if (DDR_Test_All(0, 0, 0) != 0)
-            {
-              dec_dly_offset--;
-            }
-
-            failure_detected = true;
-          }
-        }
-        while (!failure_detected);
-
-        /* restore initial DQS delay generated by the training */
-        write_rxclkdly(dqs_idx, rxclkdly);
-
-#if STM32MP_DDR3_TYPE
-        if (inc_dly_offset > dec_dly_offset)
-        {
-          data_rx_delay_margins[odt_idx - MIN_ODT_IDX][ron_idx - MIN_RON_IDX] +=
-		  dec_dly_offset;
-        }
-        else
-        {
-          data_rx_delay_margins[odt_idx - MIN_ODT_IDX][ron_idx - MIN_RON_IDX] +=
-		  inc_dly_offset;
-        }
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-        if (inc_dly_offset > dec_dly_offset)
-        {
-          data_rx_delay_margins[odt_idx - MIN_ODT_IDX][odi_idx - MIN_ODI_IDX] +=
-		  dec_dly_offset;
-        }
-        else
-        {
-          data_rx_delay_margins[odt_idx - MIN_ODT_IDX][odi_idx - MIN_ODI_IDX] +=
-		  inc_dly_offset;
-        }
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-        if (inc_dly_offset > dec_dly_offset)
-        {
-          data_rx_delay_margins[odt_idx - MIN_ODT_IDX][pdds_idx - MIN_PDDS_IDX] +=
-		  dec_dly_offset;
-        }
-        else
-        {
-          data_rx_delay_margins[odt_idx - MIN_ODT_IDX][pdds_idx - MIN_PDDS_IDX] +=
-		  inc_dly_offset;
-        }
-#endif /* STM32MP_LPDDR4_TYPE */
-      } /* dqs_idx */
-    } /* ron_idx or odi_idx or pdds_idx */
-  } /* odt_idx */
-
-  /* Display results in a 2D eye diagram */
-  printf ("\n\r ODT |\n\r");
-  for (odt_idx = MIN_ODT_IDX; odt_idx <= (MAX_ODT_IDX + 3); odt_idx++)
-  {
-    char output[64] = "\0";
-
-    if (odt_idx >= (MAX_ODT_IDX + 1))
-    {
-      sprintf(output, "     ");
-
-      if (odt_idx >= (MAX_ODT_IDX + 2))
-      {
-        sprintf(output + strlen(output), " ");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "|");
-      }
-    }
-    else
-    {
-      sprintf(output, " %03u |", odt_ohms[odt_idx]);
-    }
-
-#if STM32MP_DDR3_TYPE
-    for (ron_idx = MIN_RON_IDX; ron_idx <= MAX_RON_IDX; ron_idx++)
-    {
-      if (odt_idx == (MAX_ODT_IDX + 3))
-      {
-        sprintf(output + strlen(output), " RON");
-	break;
-      }
-      else if (odt_idx == (MAX_ODT_IDX + 2))
-      {
-        sprintf(output + strlen(output), " %03u  ", ron_ohms[ron_idx]);
-      }
-      else if (odt_idx == (MAX_ODT_IDX + 1))
-      {
-        sprintf(output + strlen(output), "______");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "  %02u  ",
-                data_rx_delay_margins[odt_idx - MIN_ODT_IDX][ron_idx - MIN_RON_IDX]);
-      }
-    } /* ron_idx */
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-    for (odi_idx = MIN_ODI_IDX; odi_idx <= MAX_ODI_IDX; odi_idx++)
-    {
-      if (odt_idx == (MAX_ODT_IDX + 3))
-      {
-        sprintf(output + strlen(output), " ODI");
-	break;
-      }
-      else if (odt_idx == (MAX_ODT_IDX + 2))
-      {
-        sprintf(output + strlen(output), " %03u  ", odi_ohms[odi_idx]);
-      }
-      else if (odt_idx == (MAX_ODT_IDX + 1))
-      {
-        sprintf(output + strlen(output), "______");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "  %02u  ",
-                data_rx_delay_margins[odt_idx - MIN_ODT_IDX][odi_idx - MIN_ODI_IDX]);
-      }
-    } /* odi_idx */
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-    for (pdds_idx = MIN_PDDS_IDX; pdds_idx <= MAX_PDDS_IDX; pdds_idx++)
-    {
-      if (odt_idx == (MAX_ODT_IDX + 3))
-      {
-        sprintf(output + strlen(output), " PDDS");
-	break;
-      }
-      else if (odt_idx == (MAX_ODT_IDX + 2))
-      {
-        sprintf(output + strlen(output), " %03u  ", pdds_ohms[pdds_idx]);
-      }
-      else if (odt_idx == (MAX_ODT_IDX + 1))
-      {
-        sprintf(output + strlen(output), "______");
-      }
-      else
-      {
-        sprintf(output + strlen(output), "  %02u  ",
-                data_rx_delay_margins[odt_idx - MIN_ODT_IDX][pdds_idx - MIN_PDDS_IDX]);
-      }
-    } /* pdds_idx */
-#endif /* STM32MP_LPDDR4_TYPE */
-    printf("%s\n\r", output);
-  } /* odt_idx */
-
-  /* Restore initial impedance values */
-  /* Go to RESET state, necessary to change settings */
-  Remote_Do_Step(STEP_DDR_RESET);
-
-  stage_in_test = 3;
-  return 0;
-
-stage_in_rx_test_3:
-  stage_in_test = 0;
-
-#if STM32MP_DDR3_TYPE
-  if (!Remote_Do_Impedance_Write("ODT", initial_odt) ||
-      !Remote_Do_Impedance_Write("RON", initial_ron))
-#endif /* STM32MP_DDR3_TYPE */
-#if STM32MP_DDR4_TYPE
-  if (!Remote_Do_Impedance_Write("ODT", initial_odt) ||
-      !Remote_Do_Impedance_Write("ODI", initial_odi))
-#endif /* STM32MP_DDR4_TYPE */
-#if STM32MP_LPDDR4_TYPE
-  if (!Remote_Do_Impedance_Write("ODT", initial_odt) ||
-      !Remote_Do_Impedance_Write("PDDS", initial_pdds))
-#endif /* STM32MP_LPDDR4_TYPE */
-  {
-    printf("impedance write error\n\r");
-    ret = 1;
-    goto rxcomputedelaymargins_end;
-  }
-
-  /* Go back to READY state, necessary to make tests */
-  Remote_Do_Step(STEP_DDR_READY);
-
-  /* New execution break during step change */
-  stage_in_test = 4;
-  return 0;
-
-stage_in_rx_test_4:
-  stage_in_test = 0;
-
-rxcomputedelaymargins_end:
-  silent_console = false;
-  save_test_id = 0;
-  initial_done = false;
-
-  return ret;
+  return ComputeDelayMargins(RX_DELAY_MARGINS);
 }

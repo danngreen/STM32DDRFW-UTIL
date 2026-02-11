@@ -251,7 +251,7 @@ int32_t BSP_I2C_Init(void)
         osSemaphoreDef(BSP_I2C_SEM);
         BspI2cSemaphore = osSemaphoreCreate(osSemaphore(BSP_I2C_SEM), 1);
 
-        if(BspI2cSemaphore == NULL)
+        if (BspI2cSemaphore == NULL)
         {
           ret = BSP_ERROR_UNKNOWN_FAILURE;
         }

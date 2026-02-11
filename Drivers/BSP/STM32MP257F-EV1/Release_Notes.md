@@ -27,9 +27,27 @@ From project settings points of view, user has only to add the necessary driverâ
 # Update History
 
 ::: {.collapse}
-<input type="checkbox" id="collapse-section1" checked aria-hidden="true">
+<input type="checkbox" id="collapse-section2" checked aria-hidden="true">
+<label for="collapse-section2" aria-hidden="true">__V1.3.0 / 02-Feb-2026__</label>
+<div>
+
+## Main Changes
+
+- Use scmi calls to enable/disable ADC clocks.
+
+
+## Notes
+
+stm32mp257f_eval_conf_template.h file must be copied in user application as >stm32mp257f_eval_conf.h with optional configuration update
+
+</div>
+:::
+
+
+::: {.collapse}
+<input type="checkbox" id="collapse-section1" aria-hidden="true">
 <label for="collapse-section1" aria-hidden="true">__V1.2.0 / 06-June-2024__</label>
-<div>			
+<div>
 
 ## Main Changes
 
@@ -50,7 +68,7 @@ stm32mp257f_eval_conf_template.h file must be copied in user application as >stm
 ::: {.collapse}
 <input type="checkbox" id="collapse-section0" aria-hidden="true">
 <label for="collapse-section0" aria-hidden="true">__V1.0.0 / 31-May-2024__</label>
-<div>			
+<div>
 
 ## Main Changes
 

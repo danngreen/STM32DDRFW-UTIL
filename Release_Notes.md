@@ -26,6 +26,13 @@ supported boards
 Update history
 ==============
 
+**V1.5.0 / 12-February-2026**
+
+This is the **V1.5.0 release of STM32DDRFW-UTIL**.
+
+-   Improve DATA TX/RX impedance eye diagram algorithms for STM32MP2 series.
+-   Rebase all STM32MP2 elements with corrections.
+
 **V1.4.0 / 28-October-2025**
 
 This is the **V1.4.0 release of STM32DDRFW-UTIL**.

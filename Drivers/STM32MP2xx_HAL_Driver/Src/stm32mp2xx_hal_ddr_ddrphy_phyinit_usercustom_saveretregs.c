@@ -44,8 +44,11 @@
  */
 int32_t ddrphy_phyinit_usercustom_saveretregs(void)
 {
+  int32_t numpstates;
   int32_t pstate;
+  int32_t numanib;
   int32_t anib;
+  int32_t numdbyte;
   int32_t byte;
   int32_t nibble;
   int32_t lane;
@@ -57,6 +60,15 @@ int32_t ddrphy_phyinit_usercustom_saveretregs(void)
   int32_t ret;
 
   VERBOSE("%s Start\n", __func__);
+
+  numpstates = ddrphy_phyinit_read_numpstates();
+  numanib = ddrphy_phyinit_read_numanib();
+  numdbyte = ddrphy_phyinit_read_numdbyte();
+  if (!(numpstates) || !(numanib) || !(numdbyte))
+  {
+    /* Incorrect initialization (or not yet done) */
+    return -1;
+  }
 
   /* In short the implementation of this function performs tasks: */
 
@@ -81,7 +93,7 @@ int32_t ddrphy_phyinit_usercustom_saveretregs(void)
   }
 
   /* Non-PState Dbyte Registers */
-  for (byte = 0; byte < userinputbasic.numdbyte; byte++)
+  for (byte = 0; byte < numdbyte; byte++)
   {
     c_addr = (uint32_t)byte << 12;
 
@@ -173,7 +185,7 @@ int32_t ddrphy_phyinit_usercustom_saveretregs(void)
   } /* c_addr */
 
   /* PState variable registers */
-  for (pstate = 0; pstate < userinputbasic.numpstates; pstate++)
+  for (pstate = 0; pstate < numpstates; pstate++)
   {
     p_addr = (uint32_t)pstate << 20;
 
@@ -184,7 +196,7 @@ int32_t ddrphy_phyinit_usercustom_saveretregs(void)
     }
 
     /* Anig Registers */
-    for (anib = 0; anib < userinputbasic.numanib; anib++)
+    for (anib = 0; anib < numanib; anib++)
     {
       c_addr = (uint32_t)anib << 12;
 
@@ -196,7 +208,7 @@ int32_t ddrphy_phyinit_usercustom_saveretregs(void)
     }
 
     /* Dbyte Registers */
-    for (byte = 0; byte < userinputbasic.numdbyte; byte++)
+    for (byte = 0; byte < numdbyte; byte++)
     {
       c_addr = (uint32_t)byte << 12;
 

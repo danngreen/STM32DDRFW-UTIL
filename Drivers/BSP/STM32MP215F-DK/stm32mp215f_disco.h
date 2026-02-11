@@ -175,7 +175,7 @@ typedef struct
   * @brief STM32MP215F DK BSP Driver version number V1.0.0
   */
 #define STM32MP215F_DK_BSP_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
-#define STM32MP215F_DK_BSP_VERSION_SUB1   (0x02U) /*!< [23:16] sub1 version */
+#define STM32MP215F_DK_BSP_VERSION_SUB1   (0x03U) /*!< [23:16] sub1 version */
 #define STM32MP215F_DK_BSP_VERSION_SUB2   (0x00U) /*!< [15:8]  sub2 version */
 #define STM32MP215F_DK_BSP_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */
 #define STM32MP215F_DK_BSP_VERSION        ((STM32MP215F_DK_BSP_VERSION_MAIN << 24)\
@@ -438,7 +438,7 @@ typedef struct
   #define COM_CA35_TX_GPIO_PORT             GPIOE
   #define COM_CA35_TX_GPIO_CLK_ENABLE()     __HAL_RCC_GPIOE_CLK_ENABLE()
   #define COM_CA35_TX_GPIO_CLK_DISABLE()    __HAL_RCC_GPIOE_CLK_DISABLE()
-  #define COM_CA35_TX_GPIO_IS_CLK_ENABLED() __HAL_RCC_GPIOAE_IS_CLK_ENABLED()
+  #define COM_CA35_TX_GPIO_IS_CLK_ENABLED() __HAL_RCC_GPIOE_IS_CLK_ENABLED()
   #define COM_CA35_RIF_RES_TYP_TX_PIN       RESMGR_RESOURCE_RIF_GPIOE
   #define COM_CA35_RCC_RES_TX_PIN           RESMGR_RCC_RESOURCE(94)
 #elif (UTIL_UART_TX_GPIO_PORT == UTIL_GPIOF)

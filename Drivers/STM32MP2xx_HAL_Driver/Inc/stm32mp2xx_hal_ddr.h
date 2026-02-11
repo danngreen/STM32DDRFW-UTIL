@@ -346,8 +346,8 @@ extern const uint32_t tx_ohms[];
 #define MAX_ODT 17
 extern const uint32_t odt_ohms[];
 #if STM32MP_DDR3_TYPE
-#define MAX_RTTNOM 6
-extern const uint32_t rttnom_ohms[];
+#define MAX_RTTWR 3
+extern const uint32_t rttwr_ohms[];
 #define MAX_RON 2
 extern const uint32_t ron_ohms[];
 #endif /* STM32MP_DDR3_TYPE */
@@ -362,6 +362,10 @@ extern const uint32_t odi_ohms[];
 extern const uint32_t dqodt_ohms[];
 #define MAX_PDDS 6
 extern const uint32_t pdds_ohms[];
+#define MAX_ATX 6
+extern const uint32_t atx_ohms[];
+#define MAX_CAODT 7
+extern const uint32_t caodt_ohms[];
 #endif /* STM32MP_LPDDR4_TYPE */
 #endif /* DDR_INTERACTIVE */
 

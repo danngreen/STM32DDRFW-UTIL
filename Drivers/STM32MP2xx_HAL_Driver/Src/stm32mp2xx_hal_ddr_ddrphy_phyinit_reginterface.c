@@ -44,6 +44,15 @@
 #define RETREG_AREA ((MAX_NUM_RET_REGS + 1) * sizeof(reg_addr_val_t))
 #define RETREG_BASE (RETRAM_BASE + RETRAM_SIZE - RETREG_AREA)
 
+/*
+ * CSR_TXSLEWRATE reset value.
+ * If related pstate/dbyte/anib is used, content is different from reset value.
+ * This register is used to get pstate/dbyte/anib numbers when context is not
+ * available.
+ */
+#define CSR_TXSLEWRATE_RST  0x7FFU
+#define CSR_ATXSLEWRATE_RST 0x7FFU
+
 static int32_t *retregsize = (int32_t *)(RETREG_BASE);
 static reg_addr_val_t *retreglist = (reg_addr_val_t *)(RETREG_BASE + sizeof(int32_t));
 
@@ -70,6 +79,120 @@ int32_t ddrphy_phyinit_setretreglistbase(uintptr_t base)
   retreglist = (reg_addr_val_t *)(base + 4);
 
   return 0;
+}
+
+static uint16_t ext_read_register(uint32_t address, uint32_t offset)
+{
+  uint16_t value;
+
+  /*
+   * Prepare for register reads\n
+   * - Write the MicroContMuxSel CSR to 0x0 to allow access to the internal CSRs
+   * - Write the UcclkHclkEnables CSR to 0x3 to enable all the clocks so the reads
+   *   can complete.
+   */
+  mmio_write_16((uintptr_t)(DDRPHYC_BASE + (4U * (TAPBONLY | CSR_MICROCONTMUXSEL_ADDR))), 0x0U);
+  mmio_write_16((uintptr_t)(DDRPHYC_BASE + (4U * (TDRTUB | CSR_UCCLKHCLKENABLES_ADDR))), 0x3U);
+
+  value = mmio_read_16((uintptr_t)(DDRPHYC_BASE + 4 * (offset | address)));
+
+  /*
+   * Prepare for mission mode
+   * - Write the UcclkHclkEnables CSR to disable the appropriate clocks after all reads done.
+   * - Write the MicroContMuxSel CSR to 0x1 to isolate the internal CSRs during mission mode
+   */
+  mmio_write_16((uintptr_t)(DDRPHYC_BASE + (4U * (TDRTUB | CSR_UCCLKHCLKENABLES_ADDR))), 0x0U);
+  mmio_write_16((uintptr_t)(DDRPHYC_BASE + (4U * (TAPBONLY | CSR_MICROCONTMUXSEL_ADDR))), 0x1U);
+
+  return value;
+}
+
+static uint16_t ext_read_txslewrate(uint32_t offset)
+{
+  return ext_read_register(CSR_TXSLEWRATE_ADDR | TDBYTE, offset);
+}
+
+static uint16_t ext_read_atxslewrate(uint32_t offset)
+{
+  return ext_read_register(CSR_ATXSLEWRATE_ADDR | TANIB, offset);
+}
+
+int32_t ddrphy_phyinit_read_numpstates(void)
+{
+  uint16_t reg;
+
+  /*
+   * Only Pstate0 can be accessed.
+   * Read related txslewrate register and test its content.
+   * If equal to 0 or reset value, then initialization is not done.
+   * Else, we have one pstate.
+   * No other value is accepted.
+   */
+  reg = ext_read_txslewrate(0U);
+
+  if ((!reg) || (reg == CSR_TXSLEWRATE_RST))
+  {
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+}
+
+int32_t ddrphy_phyinit_read_numanib(void)
+{
+  uint16_t reg;
+
+  /*
+   * Whatever the configuration, only 8 anibs are supported.
+   * Read anib7 atxslewrate register and test its content
+   * (anib7 is non-CK anib).
+   * If equal to 0 or reset value, then initialization is not done.
+   * Else, we have 8 anibs.
+   * No other value is accepted.
+   */
+  reg = ext_read_atxslewrate(7U << 12);
+
+  if ((!reg) || (reg == CSR_ATXSLEWRATE_RST))
+  {
+    return 0;
+  }
+  else
+  {
+    return 8;
+  }
+}
+
+int32_t ddrphy_phyinit_read_numdbyte(void)
+{
+  uint16_t dbyte1;
+  uint16_t dbyte3;
+
+  /*
+   * Whatever the configuration, only 2 and 4 dbytes are supported.
+   * Read dbyte3/dbyte1 txslewrate registers and test their content.
+   * If both equal to 0 or reset value, then initialization is not done.
+   * Else we have 4 dbytes if dbyte3 is equal to dbyte1.
+   * Else we have 2 dbytes.
+   * No other value is accepted.
+   */
+  dbyte1 = ext_read_txslewrate(1U << 12);
+  dbyte3 = ext_read_txslewrate(3U << 12);
+
+  if ((!(dbyte1) && !(dbyte3)) ||
+      ((dbyte1 == CSR_TXSLEWRATE_RST) && (dbyte3 == CSR_TXSLEWRATE_RST)))
+  {
+    return 0;
+  }
+  else if (dbyte1 == dbyte3)
+  {
+    return 4;
+  }
+  else
+  {
+    return 2;
+  }
 }
 
 /*
