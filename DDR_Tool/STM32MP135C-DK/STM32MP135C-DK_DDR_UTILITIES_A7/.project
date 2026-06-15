@@ -33,11 +33,6 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Common/Src/syscalls.c</locationURI>
 		</link>
 		<link>
-			<name>Common/system_time.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Common/Src/system_time.c</locationURI>
-		</link>
-		<link>
 			<name>Doc/readme.txt</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/readme.txt</locationURI>

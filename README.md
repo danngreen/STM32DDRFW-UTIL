@@ -9,7 +9,7 @@ This document describes:
 
 ## 1 STM32DDRFW-UTIL Architecture and Design
 
-STM32DDRFW-UTIL v1.5.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
+STM32DDRFW-UTIL v1.6.0 applies to STM32MP1 (STM32MP13XX and STM32MP15XX) and STM32MP2 (STM32MP21XX, STM32MP23XX and STM32MP25XX) series.
 
 ### 1.1 Package overview
 
@@ -64,6 +64,7 @@ The HAL driver APIs (in stm32mpxxx\_hal\_ddr.c file) provides the functions allo
 |**HAL\_DDR\_Edit\_Reg**      |<ul><li>**brief**<br>Edit DDR setting value. This function allows to change DDR settings after DDR\_CTRL\_INIT\_DONE step for DDRC registers and after DDR\_PHY\_INIT\_DONE step for DDRPHY user input parameters </li><li>**param**<br>*name* setting name<br>*string* new parameter value</li><li>**retval** None.</li></ul>|
 |**HAL\_DDR\_Dump\_Impedance**      |<ul><li>**brief**<br>For STM32MP2 series only, dump the impedance value. This function will print the actual value extracted from the active settings.</li>***Note:*** *Not present on STM32MP1 series.*<br><li>**param**<br>*name* impedance name (if NULL, all impedance are printed out).</li><li>**retval** HAL status.</li></ul>|
 |**HAL\_DDR\_Edit\_Impedance**      |<ul><li>**brief**<br>For STM32MP2 series only, edit impedance value. This function allows to change an impedance (i.e. so related DDR configuration parameters)before initialization in DDR\_RESET step.</li>***Note:*** *Not present on STM32MP1 series.*<br><li>**param**<br>*name* impedance name<br>*string* new impedance value</li><li>**retval** None.</li></ul>|
+|**HAL\_DDR\_Print\_VREF**      |<ul><li>**brief**<br>For STM32MP2 series with DDR4 only, this function prints the VREF status of the plaform, on both PHY and device sides.</li>***Note:*** *Not present on STM32MP1 series.*<br><li>**param** None.</li><li>**retval** None.</li></ul>|
 
 #### 1.2.2 DDR Interactive mode
 
@@ -324,6 +325,8 @@ By definition, these expert algorithms are not available in STM32CubeMX DDR Test
 
 Their objective is to provide a diagnostic on a specific element. They can be executed either with STM32CubeIDE or by flashing generated .stm32 file in the FSBL-A partition of the boot device.
 
+More details about these expert tests can be found in §2.3.1.3.
+
 ## 2 How to use STM32DDRFW-UTIL firmware
 
 ### 2.1 Hardware connections
@@ -360,7 +363,7 @@ This section describes how to compile and launch these projects in STM32CubeIDE.
 
 	- <span style="color: red;">Extra procedures <span style="color: blue;">(marked in blue below)</span> must complete nominal ones.</span>
 
-The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 2.1.0 release</span>.
+The projects contained in STM32DDRFW-UTIL package have been tested on <span style="background-color: yellow;">STM32CubeIDE 2.2.0 release</span>.
 
 #### 2.2.1 Import the project in STM32CubeIDE
 
@@ -538,6 +541,7 @@ result 13:Test BitSpread = Passed
 result 14:Test BitFlip = Passed
 result 15:Test WalkingZeroes = Passed
 result 16:Test WalkingOnes = Passed
+result 17:Test DMA stress = Passed
 Result: Pass [Test All]
 ----------------------------------------------------------------
 ```
@@ -563,7 +567,7 @@ DDR>save
 
 ##### 2.3.1.3 Special case of expert algorithms (STM32MP2 series only)
 
-###### 2.3.1.3.1 TX impedance eye diagram
+###### 2.3.1.3.1 TX impedance eye diagram (write access)
 
 This algorithm has been developed to guide user through TX impedance tuning which depends on the following trio: SoC, DDR and layout. Here are the focused impedance names depending on the DDR type:
 
@@ -581,7 +585,7 @@ Here is the log launched on STM32MP257F_EV1 board (DDR4):
 
 ```
 ----------------------------TERMINAL----------------------------
-DDR>test 17
+DDR>test 18
 case 01/15:  TX = 030 Ohms, RTTNOM = 034 Ohms
 case 02/15:  TX = 030 Ohms, RTTNOM = 040 Ohms
 case 03/15:  TX = 030 Ohms, RTTNOM = 048 Ohms
@@ -615,7 +619,7 @@ case 15/15:  TX = 060 Ohms, RTTNOM = 080 Ohms
 As shown on the example above, non-robust impedance couples can lead to errors even on the nominal case (without changing any margin). The higher the result is, the better the eye opening is.
 The goal is only to propose a trend to the user. The impedance values can then be modified inside the settings (with the dedicated command in step 0) to allow user to further explore the tests.
 
-###### 2.3.1.3.2 RX impedance eye diagram
+###### 2.3.1.3.2 RX impedance eye diagram (read access)
 
 This is the same algorithm as in previous section, but applied to RX impedances:
 
@@ -627,7 +631,7 @@ Here is the log launched on STM32MP257F_EV1 board (DDR4):
 
 ```
 ----------------------------TERMINAL----------------------------
-DDR>test 18
+DDR>test 19
 case 01/24:  ODT = 037 Ohms, ODI = 034 Ohms
 case 02/24:  ODT = 037 Ohms, ODI = 048 Ohms
 case 03/24:  ODT = 040 Ohms, ODI = 034 Ohms
@@ -669,6 +673,29 @@ case 24/24:  ODT = 240 Ohms, ODI = 048 Ohms
      |____________
        034   048
        ODI
+----------------------------------------------------------------
+```
+
+###### 2.3.1.3.3 VREF print
+This service, only available on STM32MP2 series with DDR4 type, prints the VREF status of the plaform, on both PHY and device sides.
+
+Three PHYVREF values are necessary to have the complete view:
+
+- the theoretical value calculated from ODT and ODI impedances
+- the programmed value (only some values are possible, take the nearest one)
+- the measured one (after training sequence)
+
+For SDRAM device VREF, only the programmed value can be displayed (which is supposed to be always fixed).
+
+Here is the log launched on STM32MP257F_EV1 board (DDR4):
+
+```
+----------------------------TERMINAL----------------------------
+DDR>print vref                                                                  
+PHYVREF theoretical value = 73,762 %VDDQ                                           
+PHYVREF programmed value = 73,437 %VDDQ                                         
+PHYVREF measured value = 73,425 %VDDQ                                           
+SDRAM device VREF = 74,300 %VDDQ                                                
 ----------------------------------------------------------------
 ```
 

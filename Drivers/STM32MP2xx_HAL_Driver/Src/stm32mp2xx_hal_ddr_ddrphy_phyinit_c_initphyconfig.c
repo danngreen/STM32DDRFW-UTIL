@@ -87,11 +87,12 @@ static void atxslewrate_program(void)
   int32_t anib;
   int32_t atxpren; /* Default to 0xf (max). Optimal setting is technology specific. */
   int32_t atxprep; /* Default to 0xf (max). Optimal setting is technology specific. */
-  int32_t ck_anib_inst[2] = { 0 };
+  int32_t ck_anib_inst[2] __unused = { 0 };
 
   atxprep = userinputadvanced.txslewriseac;
   atxpren = userinputadvanced.txslewfallac;
 
+#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
   /*
    * # of ANIBs      CK ANIB Instance
    * ACX8            ANIB 1
@@ -101,6 +102,7 @@ static void atxslewrate_program(void)
     ck_anib_inst[0] = 1;
     ck_anib_inst[1] = 1;
   }
+#endif /* STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE */
 
   for (anib = 0; anib < userinputbasic.numanib; anib++)
   {
@@ -110,24 +112,20 @@ static void atxslewrate_program(void)
 
     c_addr = anib << 12;
 
+#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
     if ((anib == ck_anib_inst[0]) || (anib == ck_anib_inst[1]))
     {
       /* CK ANIB instance */
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
       atxpredrvmode = 0x0;
-#elif STM32MP_LPDDR4_TYPE
-      atxpredrvmode = 0x1;
-#endif /* STM32MP_LPDDR4_TYPE */
     }
     else
     {
       /* non-CK ANIB instance */
-#if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
       atxpredrvmode = 0x3;
-#elif STM32MP_LPDDR4_TYPE
-      atxpredrvmode = 0x1;
-#endif /* STM32MP_LPDDR4_TYPE */
     }
+#else /* STM32MP_LPDDR4_TYPE */
+    atxpredrvmode = 0x1;
+#endif /* STM32MP_LPDDR4_TYPE */
 
     atxslewrate = (uint16_t)((atxpredrvmode << CSR_ATXPREDRVMODE_LSB) |
                              (atxpren << CSR_ATXPREN_LSB) |

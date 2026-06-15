@@ -53,6 +53,8 @@ uint32_t DDR_Test_WalkingZeroes(unsigned long size, unsigned long loop_in,
                                 unsigned long addr_in);
 uint32_t DDR_Test_WalkingOnes(unsigned long size, unsigned long loop_in,
                               unsigned long addr_in);
+uint32_t HAL_DDR_Test_DMA_Stress(unsigned long size_in, unsigned long loop_in,
+                                 unsigned long nb_channel);
 #ifdef TEST_INFINITE_ENABLE
 uint32_t DDR_Test_Infinite_write(unsigned long pattern_in,
                                  unsigned long addr_in);

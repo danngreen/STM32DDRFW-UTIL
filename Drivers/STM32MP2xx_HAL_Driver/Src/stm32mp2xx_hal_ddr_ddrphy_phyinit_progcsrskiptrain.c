@@ -69,6 +69,7 @@ static void dfimrl_program(void)
     int32_t phy_rx_fifo_dly;
     int32_t phy_rx_insertion_dly = 200;
     int32_t phy_tx_insertion_dly = 200;
+    int32_t tmp_value;
     int64_t dficlk_period_x1000;
     int64_t dfimrl_in_fs;
     int64_t uifs;
@@ -81,10 +82,11 @@ static void dfimrl_program(void)
 
     phy_rx_fifo_dly = (int32_t)(((200 * 1000) + 4 * uifs) / 1000);
 
+    tmp_value = phy_tx_insertion_dly + phy_rx_insertion_dly + phy_rx_fifo_dly +
+                timings.tstaoff[pstate] + timings.tcasl_add[pstate] +
+                timings.tpdm[pstate];
     dfimrl_in_fs = (ardptrinitval[pstate] * uifs) +
-                   ((phy_tx_insertion_dly + phy_rx_insertion_dly + phy_rx_fifo_dly +
-                    timings.tstaoff[pstate] + timings.tcasl_add[pstate] +
-                    timings.tpdm[pstate]) * 1000);
+                   ((int64_t)tmp_value * 1000);
 
     dfimrl_in_dficlk = (int32_t)dfimrl_in_fs / dficlk_period_x1000;
     if ((dfimrl_in_fs % dficlk_period_x1000) != 0)
@@ -145,6 +147,7 @@ static void txdqsdlytg_program(uint16_t *txdqsdly)
     int32_t txdqsdlytg_9to6; /* Coarse delay - 1UI per increment */
     int32_t txdqsdlytg_fine_default = 0;
     int32_t txdqsdlytg_coarse_default = 4;
+    int32_t timings_sum;
     int64_t tmp_value;
     int64_t uifs;
 
@@ -156,9 +159,10 @@ static void txdqsdlytg_program(uint16_t *txdqsdly)
                                  timings.tstaoff[pstate] + timings.tcasl_add[pstate] -
                                  timings.tpdm[pstate]) / (int32_t)(uifs / 1000));
 
+    timings_sum = timings.tstaoff[pstate] + timings.tcasl_add[pstate] -
+                  timings.tpdm[pstate];
     tmp_value = fmodll((txdqsdlytg_fine_default * uifs / 32 +
-                        ((timings.tstaoff[pstate] +  timings.tcasl_add[pstate]) * 1000) -
-                        (timings.tpdm[pstate] * 1000)),
+                        ((int64_t)timings_sum * 1000)),
                        uifs);
     txdqsdlytg_5to0 = (int32_t)(tmp_value / uifs * 32);
     if ((tmp_value % uifs) != 0)
@@ -339,6 +343,7 @@ static void rxendly_program(void)
     uint32_t p_addr;
     int32_t rxendly_10to6; /* Coarse delay - 1UI per increment */
     int32_t rxendly_5to0; /* Fine delay - 1/32UI per increment */
+    int32_t tmp_value;
     int32_t totfinestep;
     int64_t finestepfs; /* fine steps in fs */
     int64_t rxendly_offset_x1000000 = 0; /* 0 offset is 1UI before the first DQS. */
@@ -374,9 +379,9 @@ static void rxendly_program(void)
 #endif /* STM32MP_LPDDR4_TYPE */
 
     finestepfs = uifs / 32;
+    tmp_value = timings.tstaoff[pstate] + timings.tcasl_add[pstate] + timings.tpdm[pstate];
     totfs = ((32 * rxendly_coarse_default * finestepfs) +
-             (rxendly_fine_default * finestepfs) +
-             ((timings.tstaoff[pstate] + timings.tcasl_add[pstate] + timings.tpdm[pstate]) * 1000) +
+             (rxendly_fine_default * finestepfs) + ((int64_t)tmp_value * 1000) +
              (rxendly_offset_x1000000 / 1000));
     totfinestep = totfs / finestepfs;
 
@@ -604,7 +609,7 @@ static void seq0bgpr_program(void)
     mmio_write_16((uintptr_t)(DDRPHYC_BASE + (4U * (ps | C0 | TINITENG | R2 | CSR_SEQ0BGPR1_ADDR))),
                   regdata);
 
-    regdata = (uint16_t)((wl - 5 + extradly) << CSR_ACSMWCASLAT_LSB);
+    regdata = (uint16_t)(((wl + extradly) - 5) << CSR_ACSMWCASLAT_LSB);
     mmio_write_16((uintptr_t)(DDRPHYC_BASE + (4U * (ps | C0 | TINITENG | R2 | CSR_SEQ0BGPR2_ADDR))),
                   regdata);
 

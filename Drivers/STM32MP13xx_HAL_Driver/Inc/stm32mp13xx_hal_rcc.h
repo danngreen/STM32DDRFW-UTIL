@@ -235,7 +235,6 @@ typedef struct
 /** @defgroup RCC_Exported_Constants RCC Exported Constants
   * @{
   */
-#define DBP_TIMEOUT_VALUE              ((uint32_t)100U)
 
 /** @defgroup RCC_Oscillator_Type RCC_Oscillator_Type
   * @{
@@ -4464,13 +4463,14 @@ uint32_t RCC_GetCKPERFreq(void);
   * @{
   */
 
-#define LSE_TIMEOUT_VALUE          LSE_STARTUP_TIMEOUT
 #define HSE_TIMEOUT_VALUE          HSE_STARTUP_TIMEOUT
 #define HSI_TIMEOUT_VALUE          (100U)  /* 100 ms */
 #define CSI_TIMEOUT_VALUE          (100U)  /* 100 ms */
 #define LSI_TIMEOUT_VALUE          (100U)  /* 100 ms */
 #define PLL_TIMEOUT_VALUE          (100U)  /* 100 ms */
 #define CLOCKSWITCH_TIMEOUT_VALUE  (1000U) /* 1 s    */
+#define RCC_DBP_TIMEOUT_VALUE      ((uint32_t)100U)
+#define RCC_LSE_TIMEOUT_VALUE      LSE_STARTUP_TIMEOUT
 
 /**
   * @}

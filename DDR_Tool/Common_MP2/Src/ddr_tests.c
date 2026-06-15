@@ -1777,6 +1777,281 @@ uint32_t DDR_Test_WalkingOnes(unsigned long size, unsigned long loop_in,
   return 0;
 }
 
+#define MAX_DMA_CHANNEL 12
+
+/**
+* @brief test DMA stress
+* @par Test Description
+*   Stress DDR using DMA transfers
+* @par Test Hardware Connection
+* - None
+* @par Required preconditions
+* - None
+* @par Expected result
+* - None
+* @par Called functions
+* - xxx
+* @par Used Peripherals
+* - None,...
+* @retval
+*  0: Test passed
+*  Value different from 0: Test failed
+*  None(0xFF): if the result is deduced by the user: waveform, event...
+*/
+uint32_t HAL_DDR_Test_DMA_Stress(unsigned long size_in, unsigned long loop_in,
+                                 unsigned long nb_channel)
+{
+  unsigned long i = 0;
+  unsigned long addr_in[MAX_DMA_CHANNEL];
+  unsigned long addr_out[MAX_DMA_CHANNEL];
+  unsigned long data;
+  unsigned long value;
+  unsigned long offset;
+  unsigned long bufsize;
+  unsigned int seed;
+  uint32_t nb_loop;
+  uint64_t value64;
+  DMA_RepeatBlockConfTypeDef RepeatBlockConfig = {0};
+  DMA_HandleTypeDef handle_HPDMA_Channel[MAX_DMA_CHANNEL];
+  uint32_t hal_status = HAL_OK;
+
+  if (get_buf_size(size_in, &bufsize, 4 * 1024, 4) != 0)
+  {
+    return 1;
+  }
+
+  get_nb_loop(loop_in, &nb_loop, 1);
+
+  if (nb_channel == 0)
+  {
+    nb_channel = 1;
+  }
+
+  if (nb_channel > 12)
+  {
+    if (!silent_console)
+    {
+      printf("Invalid channel number [1..12]: 0x%lx\n\r", nb_channel);
+    }
+    return 2;
+  }
+
+  if (bufsize > (64 * 1024) - 4)
+  {
+    if (!silent_console)
+    {
+      printf("Invalid size: 0x%lx\n\r", bufsize);
+      printf("Max size = 64 Kbytes - 4 = 65532\n\r");
+    }
+    return 3;
+  }
+
+  if (nb_loop > 2047)
+  {
+    if (!silent_console)
+    {
+#ifdef __AARCH64__
+      printf("Invalid repeat block number : 0x%x\n\r", nb_loop);
+#else
+      printf("Invalid repeat block number : 0x%lx\n\r", nb_loop);
+#endif
+      printf("Max value = 2047\n\r");
+    }
+    return 4;
+  }
+
+  addr_in[0] = DDR_MEM_BASE;
+  addr_out[0] = addr_in[0] + (nb_channel * nb_loop * bufsize);
+
+  value64 = addr_out[0] + (nb_channel * nb_channel * nb_loop * bufsize);
+  if (value64 > (uint64_t)(DDR_MEM_SIZE + DDR_MEM_BASE -1))
+  {
+    if (!silent_console)
+    {
+#ifdef __AARCH64__
+      printf("Address exceed memory boundary  : 0x%lx\n\r", value64);
+#else
+      printf("Address exceed memory boundary  : 0x%llx\n\r", value64);
+#endif
+    }
+    return 5;
+  }
+
+  /* DMA configuration */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_HPDMA1_CLK_ENABLE();
+  __HAL_RCC_HPDMA2_CLK_ENABLE();
+  __HAL_RCC_HPDMA3_CLK_ENABLE();
+
+  /* Define DMA channels to use */
+  handle_HPDMA_Channel[0].Instance = HPDMA1_Channel12;
+  handle_HPDMA_Channel[1].Instance = HPDMA1_Channel13;
+  handle_HPDMA_Channel[2].Instance = HPDMA1_Channel14;
+  handle_HPDMA_Channel[3].Instance = HPDMA1_Channel15;
+  handle_HPDMA_Channel[4].Instance = HPDMA2_Channel12;
+  handle_HPDMA_Channel[5].Instance = HPDMA2_Channel13;
+  handle_HPDMA_Channel[6].Instance = HPDMA2_Channel14;
+  handle_HPDMA_Channel[7].Instance = HPDMA2_Channel15;
+  handle_HPDMA_Channel[8].Instance = HPDMA3_Channel12;
+  handle_HPDMA_Channel[9].Instance = HPDMA3_Channel13;
+  handle_HPDMA_Channel[10].Instance = HPDMA3_Channel14;
+  handle_HPDMA_Channel[11].Instance = HPDMA3_Channel15;
+
+  /* DMA channels init */
+  for (i = 0; i < nb_channel; i++)
+  {
+    hal_status = HAL_DMA_ConfigChannelAttributes(&handle_HPDMA_Channel[i],
+                                                 (DMA_CHANNEL_CID_STATIC_1 | DMA_CHANNEL_PRIV |
+                                                  DMA_CHANNEL_SEC | DMA_CHANNEL_DEST_SEC |
+                                                  DMA_CHANNEL_SRC_SEC));
+    if (hal_status != HAL_OK)
+    {
+      if (!silent_console)
+      {
+        printf("HAL_DMA_ConfigChannelAttributes error\n\r");
+      }
+      return 6;
+    }
+
+    handle_HPDMA_Channel[i].Init.Request = DMA_REQUEST_SW;
+    handle_HPDMA_Channel[i].Init.BlkHWRequest = DMA_BREQ_BLOCK;
+    handle_HPDMA_Channel[i].Init.Direction = DMA_MEMORY_TO_MEMORY;
+    handle_HPDMA_Channel[i].Init.SrcInc = DMA_SINC_INCREMENTED;
+    handle_HPDMA_Channel[i].Init.DestInc = DMA_DINC_INCREMENTED;
+    handle_HPDMA_Channel[i].Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD; /* No AXI DWORD */
+    handle_HPDMA_Channel[i].Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD; /* No AXI DWORD */
+    handle_HPDMA_Channel[i].Init.Priority = DMA_HIGH_PRIORITY;
+    handle_HPDMA_Channel[i].Init.SrcBurstLength = 16; /* PVA  64 byte burst */
+    handle_HPDMA_Channel[i].Init.DestBurstLength = 16;
+    handle_HPDMA_Channel[i].Init.Mode = DMA_NORMAL;
+    handle_HPDMA_Channel[i].Init.TransferEventMode = DMA_TCEM_REPEATED_BLOCK_TRANSFER;
+
+    /* AXI port selection */
+    handle_HPDMA_Channel[i].Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+                                                         DMA_DEST_ALLOCATED_PORT0;
+
+    if (HAL_DMA_Init(&handle_HPDMA_Channel[i]) != HAL_OK)
+    {
+      if (!silent_console)
+      {
+        printf("HAL_DMA_Init error\n\r");
+      }
+      return 7;
+    }
+
+    HPDMA1->SECCFGR = 0x0000FFFF;
+    HPDMA2->SECCFGR = 0x0000FFFF; /* control DMA is secure */
+    HPDMA3->SECCFGR = 0x0000FFFF; /* control DMA is secure */
+    handle_HPDMA_Channel[i].Instance->CTR1 |= 0x80008000;
+    HPDMA1->PRIVCFGR = 0x0000FFFF;
+    HPDMA2->PRIVCFGR = 0x0000FFFF;
+    HPDMA3->PRIVCFGR = 0x0000FFFF;
+
+    RepeatBlockConfig.RepeatCount = 1024;
+    RepeatBlockConfig.SrcAddrOffset = 0;
+    RepeatBlockConfig.DestAddrOffset = 0;
+    RepeatBlockConfig.BlkSrcAddrOffset = 0;
+    RepeatBlockConfig.BlkDestAddrOffset = 0;
+    if (HAL_DMAEx_ConfigRepeatBlock(&handle_HPDMA_Channel[i],
+                                    &RepeatBlockConfig) != HAL_OK)
+    {
+      printf("HAL_DMAEx_ConfigRepeatBlock error\n\r");
+      return 1;
+    }
+  }
+
+  /* DDR security configuration (RISAF4) */
+  WRITE_REG(RISAF4->CR, 0x00000000); /* Disable */
+  WRITE_REG(RISAF4->REG[0].STARTR, DDR_MEM_BASE); /* Region 0 start address */
+  WRITE_REG(RISAF4->REG[0].ENDR, (uint32_t)(DDR_MEM_SIZE - 1)); /* Region 0 end address */
+  WRITE_REG(RISAF4->REG[0].CIDCFGR, 0x00FF00FF); /* Allow accesses from every compartment */
+  WRITE_REG(RISAF4->REG[0].CFGR, 0x0000101); /* Secure and base regions enable */
+
+  /* Init buffers to transfer */
+  for (i = 0; i < nb_channel; i++)
+  {
+    unsigned long bufsize_words;
+
+    seed = rand();
+    srand(seed);
+
+    bufsize_words = bufsize/sizeof(unsigned long);
+
+    addr_in[i] = addr_in[0] + (bufsize * nb_loop * i);
+    addr_out[i] = addr_out[0] + (bufsize * nb_loop * i);
+    handle_HPDMA_Channel[i].Instance->CBR1 &= 0x1FFFF; /* Nb of repeated block */
+
+    for (offset = 0; offset < bufsize_words; offset ++)
+    {
+      data = rand();
+      *(unsigned long *)(addr_in[i] + offset) = data;
+    }
+  }
+
+  /* Start buffers transfer DDR to DDR */
+  for (i = 0; i < nb_channel; i++)
+  {
+    handle_HPDMA_Channel[i].Instance->CBR1 |= nb_loop << 16;
+  }
+
+  for (i = 0; i < nb_channel; i++)
+  {
+    hal_status = HAL_DMA_Start(&handle_HPDMA_Channel[i], (uint32_t)addr_in[i],
+                               (uint32_t)addr_out[i], bufsize);
+    if (hal_status != HAL_OK)
+    {
+      if (!silent_console)
+      {
+        printf("HAL_DMA_Start error\n\r");
+      }
+      return 10;
+    }
+  }
+
+  for (i = 0; i < nb_channel; i++)
+  {
+    hal_status = HAL_DMA_PollForTransfer(&handle_HPDMA_Channel[i],
+                            HAL_DMA_FULL_TRANSFER, 1000); /* Low timeout */
+    if (hal_status != HAL_OK)
+    {
+      if (!silent_console)
+      {
+        printf("HAL_DMA_PollForTransfer error\n\r");
+      }
+      return 11;
+    }
+  }
+
+  /* Check data */
+  for (i = 0; i < nb_channel; i++)
+  {
+    bool exit = false;
+    for (offset = 0; offset < (nb_loop*bufsize); offset += sizeof(uint32_t))
+    {
+      value = *(unsigned long *)(addr_in[i] + offset);
+      data = *(unsigned long *)(addr_out[i] + offset);
+      if (data != value)
+      {
+        if (!silent_console)
+        {
+          printf("  error @ 0x%lx:value  0x%lx expected 0x%lx\n\r",
+                 addr_out[i] + offset, value, data);
+	}
+	exit = true;
+        break;
+      }
+    }
+
+    if (exit)
+    {
+      break;
+    }
+  }
+
+  return 0;
+}
+
 #ifdef TEST_INFINITE_ENABLE
 /**
 * @brief test infinite write access to DDR
@@ -2206,6 +2481,11 @@ static bool write_dly(uint32_t mode, uint32_t idx, uint32_t value)
   return true;
 }
 
+static uint32_t TestDelayMargins(void)
+{
+  return DDR_Test_All(0, 0, 0);
+}
+
 static uint32_t ComputeDelayMargins(uint32_t mode)
 {
   uint32_t test_id = 0;
@@ -2333,7 +2613,7 @@ stage_in_test_1:
 stage_in_test_2:
       stage_in_test = 0;
 
-      if (DDR_Test_All(0, 0, 0) != 0)
+      if (TestDelayMargins() != 0)
       {
         printf("current impedance configuration not functional\n\r");
         continue;
@@ -2364,12 +2644,12 @@ stage_in_test_2:
 
           valid_delay_us(1000);
 
-          if (DDR_Test_All(0, 0, 0) != 0)
+          if (TestDelayMargins() != 0)
           {
             inc_dly_offset--;
             write_dly(test_id, dqs_idx, dly + inc_dly_offset);
 
-            if (DDR_Test_All(0, 0, 0) != 0)
+            if (TestDelayMargins() != 0)
             {
               inc_dly_offset--;
             }
@@ -2396,12 +2676,12 @@ stage_in_test_2:
 
           valid_delay_us(1000);
 
-          if (DDR_Test_All(0, 0, 0) != 0)
+          if (TestDelayMargins() != 0)
           {
             dec_dly_offset--;
             write_dly(test_id, dqs_idx, dly - dec_dly_offset);
 
-            if (DDR_Test_All(0, 0, 0) != 0)
+            if (TestDelayMargins() != 0)
             {
               dec_dly_offset--;
             }

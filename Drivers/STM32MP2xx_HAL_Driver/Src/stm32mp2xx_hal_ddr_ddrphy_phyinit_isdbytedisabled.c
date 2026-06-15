@@ -27,12 +27,10 @@ int32_t ddrphy_phyinit_isdbytedisabled(int32_t dbytenumber)
   int32_t nad0 __unused;
   int32_t nad1 __unused;
 
-  disabledbyte = 0; /* Default assume Dbyte is Enabled */
-
 #if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE
   /* Implements Section 1.3 of Pub Databook */
   disabledbyte = (dbytenumber > (userinputbasic.numactivedbytedfi0 - 1)) ? 1 : 0;
-#elif STM32MP_LPDDR4_TYPE
+#else /* STM32MP_LPDDR4_TYPE */
   nad0 = userinputbasic.numactivedbytedfi0;
   nad1 = userinputbasic.numactivedbytedfi1;
 
@@ -67,6 +65,7 @@ int32_t ddrphy_phyinit_isdbytedisabled(int32_t dbytenumber)
   }
   else
   {
+    disabledbyte = 0;
     ERROR("%s invalid PHY configuration:dfi1exists is neither 1 or 0.\n", __func__);
   }
 #endif /* STM32MP_LPDDR4_TYPE */
@@ -84,7 +83,7 @@ int32_t ddrphy_phyinit_isdbytedisabled(int32_t dbytenumber)
   {
     disabledbyte = disabledbyte | ((int32_t)mb_ddr_1d[0].disableddbyte & (0x1 << dbytenumber));
   }
-#elif STM32MP_LPDDR4_TYPE
+#else /* STM32MP_LPDDR4_TYPE */
   if ((mb_ddr_1d[0].enableddqscha < 1U) ||
       (mb_ddr_1d[0].enableddqscha > (uint8_t)(8 * userinputbasic.numactivedbytedfi0)))
   {

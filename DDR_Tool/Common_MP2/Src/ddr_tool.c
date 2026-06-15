@@ -105,6 +105,8 @@ const subcmd_desc test[] = {
    "test Walking Ones pattern", 3},
   {DDR_Test_WalkingOnes, "Test WalkingOnes", "[size] [loop] [addr]",
    "test Walking Zeroes pattern", 3},
+  {HAL_DDR_Test_DMA_Stress, "Test DMA stress", "[size] [loop] [nb_channels]",
+   "test Walking Zeroes pattern", 3},
   {DDR_Test_TXComputeDelayMargins, "Computes TX DQS delay margins", "[none]",
    "computes TX DQS delay margins with present impedances", 0},
   {DDR_Test_RXComputeDelayMargins, "Computes RX DQS delay margins", "[none]",
@@ -661,7 +663,7 @@ static void do_impedance(HAL_DDR_InteractStepTypeDef step, int argc, char *argv[
   }
 }
 
-static void do_print(int argc, char * const argv[])
+static void do_print(HAL_DDR_InteractStepTypeDef step, int argc, char * const argv[])
 {
   char reg_name[(argc == 1)? 0 : strlen(argv[0])];
 
@@ -673,9 +675,21 @@ static void do_print(int argc, char * const argv[])
     case 2:
       HAL_DDR_Convert_Case(argv[0], reg_name, 1); /* convert to upper case */
 
-      if (HAL_DDR_Dump_Reg(reg_name, false) != HAL_OK)
+      if (strcmp(reg_name, "VREF"))
       {
-        printf("invalid argument %s\n\r", reg_name);
+        if (HAL_DDR_Dump_Reg(reg_name, false) != HAL_OK)
+        {
+          printf("invalid argument %s\n\r", reg_name);
+        }
+      }
+      else
+      {
+        if (check_step(step, STEP_DDR_READY))
+        {
+#if STM32MP_DDR4_TYPE
+          HAL_DDR_Print_VREF(&static_ddr_config);
+#endif /* STM32MP_DDR4_TYPE */
+        }
       }
       break;
   }
@@ -976,7 +990,7 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
       break;
 
     case DDR_CMD_PRINT:
-      do_print(argc, argv);
+      do_print(step, argc, argv);
       break;
 
     case DDR_CMD_EDIT:

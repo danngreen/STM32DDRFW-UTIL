@@ -734,7 +734,7 @@ __weak HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruc
 
     while ((PWR->CR1 & PWR_CR1_DBP) == 0U)
     {
-      if ((HAL_GetTick() - tickstart) > DBP_TIMEOUT_VALUE)
+      if ((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
       {
         return HAL_TIMEOUT;
       }
@@ -900,7 +900,7 @@ HAL_StatusTypeDef HAL_RCC_LSEConfig(uint32_t State)
   /* Wait till LSE is disabled */
   while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) != 0U)
   {
-    if ((HAL_GetTick() - tickstart) > LSE_TIMEOUT_VALUE)
+    if ((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE)
     {
       return HAL_TIMEOUT;
     }
@@ -934,7 +934,7 @@ HAL_StatusTypeDef HAL_RCC_LSEConfig(uint32_t State)
     /* Wait till LSE is ready */
     while (__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) == 0U)
     {
-      if ((HAL_GetTick() - tickstart) > LSE_TIMEOUT_VALUE)
+      if ((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE)
       {
         return HAL_TIMEOUT;
       }
@@ -1390,9 +1390,9 @@ HAL_StatusTypeDef RCC_MPUConfig(const RCC_MPUInitTypeDef *RCC_MPUInitStruct)
 
   /* Configure the source of time base considering new system clocks settings*/
   return HAL_InitTick(uwTickPrio);
-#endif /* CORE_CA7 */
-
+#else
   return HAL_OK;
+#endif /* CORE_CA7 */
 }
 
 

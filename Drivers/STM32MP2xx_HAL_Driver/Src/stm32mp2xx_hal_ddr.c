@@ -140,7 +140,7 @@
   * @brief HAL DDR module driver
   * @{
   */
-#if defined (DDRC) && defined (DDRPHYC)
+#if defined (DDRC)
 
 /* Private typedef -----------------------------------------------------------*/
 typedef enum
@@ -776,12 +776,17 @@ const __attribute__((section (".STATIC_PARAMS"))) uint32_t tab_static_param[] =
    DDRC_DBGCAM_DATA_PIPELINE_EMPTY)
 
 /* DDRPHY registers */
+#define DDRPHY_DBYTE_VREFDAC0                0x040100U
+#define DDRPHY_DBYTE_DQDQSRCVCNTRL           0x04010CU
 #define DDRPHY_INITENG0_P0_SEQ0BDISABLEFLAG6 0x240004U
 #define DDRPHY_INITENG0_P0_PHYINLPX          0x2400A0U
 #define DDRPHY_DRTUB0_UCCLKHCLKENABLES       0x300200U
 #define DDRPHY_APBONLY0_MICROCONTMUXSEL      0x340000U
 
 /* DDRPHY register fields */
+#define DDRPHY_DBYTE_VREFDAC0_VREFDAC0                  (0x7FUL << 0)
+#define DDRPHY_DBYTE_DQDQSRCVCNTRL_EXTVREFRANGE         (1U << 1)
+#define DDRPHY_DBYTE_DQDQSRCVCNTRL_MAJORMODEDBYTE       (0x7U << 4)
 #define DDRPHY_INITENG0_P0_PHYINLPX_PHYINLP3            (1U << 0)
 #define DDRPHY_DRTUB0_UCCLKHCLKENABLES_UCCLKEN          (1U << 0)
 #define DDRPHY_DRTUB0_UCCLKHCLKENABLES_HCLKEN           (1U << 1)
@@ -1103,7 +1108,10 @@ static uintptr_t ddr_test_rw_access(void)
     return (uintptr_t)addr;
   }
 
-  *addr = saved_value;
+  if (saved_value != DDR_PATTERN)
+  {
+    *addr = saved_value;
+  }
 
   return 0UL;
 }
@@ -2027,8 +2035,13 @@ static int32_t ssr_entry(bool standby)
     }
   }
 
-  SET_BIT(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPEN);
-  CLEAR_BIT(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPLPEN);
+  /* Disable DDRSS bus clocks */
+  CLEAR_BIT(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPEN);
+  CLEAR_BIT(RCC->DDRCFGR, RCC_DDRCFGR_DDRCFGEN);
+  CLEAR_BIT(RCC->DDRCAPBCFGR, RCC_DDRCAPBCFGR_DDRCAPBEN);
+  CLEAR_BIT(RCC->DDRPHYCAPBCFGR, RCC_DDRPHYCAPBCFGR_DDRPHYCAPBEN);
+
+  /* Configure DDRSS kernel clocks for low power */
   SET_BIT(RCC->DDRPHYCCFGR, RCC_DDRPHYCCFGR_DDRPHYCEN);
   SET_BIT(RCC->DDRITFCFGR, RCC_DDRITFCFGR_DDRPHYDLP);
 
@@ -2062,8 +2075,13 @@ static int32_t stdby_sr_ssr_entry(void)
   */
 static int32_t sr_ssr_exit(void)
 {
-  SET_BIT(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPEN | RCC_DDRCPCFGR_DDRCPLPEN);
+  /* Enable DDRSS bus clocks */
+  SET_BIT(RCC->DDRCPCFGR, RCC_DDRCPCFGR_DDRCPEN);
+  SET_BIT(RCC->DDRCFGR, RCC_DDRCFGR_DDRCFGEN);
+  SET_BIT(RCC->DDRCAPBCFGR, RCC_DDRCAPBCFGR_DDRCAPBEN);
+  SET_BIT(RCC->DDRPHYCAPBCFGR, RCC_DDRPHYCAPBCFGR_DDRPHYCAPBEN);
 
+  /* Restore DDRSS kernel clocks */
   CLEAR_BIT(RCC->DDRITFCFGR, RCC_DDRITFCFGR_DDRPHYDLP);
   SET_BIT(RCC->DDRPHYCCFGR, RCC_DDRPHYCCFGR_DDRPHYCEN);
 
@@ -4016,6 +4034,86 @@ void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
   }
 }
 
+#if STM32MP_DDR4_TYPE
+void HAL_DDR_Print_VREF(HAL_DDR_ConfigTypeDef *config)
+{
+  uint32_t vref;
+  uint32_t odi = (((uint32_t)config->p_uim.mr1[0] & ~ODI_MASK) == 0U) ? 34 : 48;
+  uint16_t vrefdac0;
+  uint16_t dqdqsrcvcntrl;
+  uint32_t offset;
+  uint32_t factor;
+
+
+  /* Get theoretical phyvref value */
+  vref = ((2 * odi) + config->p_uia.odtimpedance[0]) * 100000;
+  vref /= (2 * (odi + config->p_uia.odtimpedance[0]));
+  printf("PHYVREF theoretical value = %d,%d %%VDDQ\n\r", vref / 1000, vref % 1000);
+
+  /* Get programmed phyvref value */
+  vref = config->p_uia.phyvref * 1000 * 100;
+  vref /= 128;
+  printf("PHYVREF programmed value = %d,%d %%VDDQ\n\r", vref / 1000, vref % 1000);
+
+  /* Get measured phyvref value */
+  /* Enable APB access to internal CSR registers */
+  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHY_APBONLY0_MICROCONTMUXSEL), 0U);
+  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHY_DRTUB0_UCCLKHCLKENABLES),
+            DDRPHY_DRTUB0_UCCLKHCLKENABLES_UCCLKEN | DDRPHY_DRTUB0_UCCLKHCLKENABLES_HCLKEN);
+
+  vrefdac0 = READ_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHY_DBYTE_VREFDAC0));
+  dqdqsrcvcntrl = READ_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHY_DBYTE_DQDQSRCVCNTRL));
+
+  /* Disable APB access to internal CSR registers */
+  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHY_DRTUB0_UCCLKHCLKENABLES), 0U);
+  WRITE_REG(*(volatile uint32_t *)(DDRPHYC_BASE + DDRPHY_APBONLY0_MICROCONTMUXSEL),
+            DDRPHY_APBONLY0_MICROCONTMUXSEL_MICROCONTMUXSEL);
+
+  switch (dqdqsrcvcntrl & (DDRPHY_DBYTE_DQDQSRCVCNTRL_EXTVREFRANGE |
+                          DDRPHY_DBYTE_DQDQSRCVCNTRL_MAJORMODEDBYTE))
+  {
+    case 0U: /* extvrefrange = 0b, majormode = 000b */
+        offset = 28700U;
+        factor = 330U;
+      break;
+    case 0x2U: /* extvrefrange = 1b, majormode = 000b */
+        offset = 25000U;
+        factor = 385U;
+      break;
+    case 0x30U: /* extvrefrange = 0b, majormode = 011b */
+        offset = 51000U;
+        factor = 345U;
+      break;
+    case 0x32U: /* extvrefrange = 1b, majormode = 011b */
+        offset = 45300U;
+        factor = 385U;
+      break;
+    case 0x20U: /* extvrefrange = 0b, majormode = 010b */
+        offset = 4700U;
+        factor = 367U;
+      break;
+    default:
+        printf("unexpected dqdqsrcvcntrl value 0x%x\n\r", dqdqsrcvcntrl);
+        return;
+  }
+
+  vref = offset + ((vrefdac0 & DDRPHY_DBYTE_VREFDAC0_VREFDAC0) * factor);
+  printf("PHYVREF measured value = %d,%d %%VDDQ\n\r", vref / 1000, vref % 1000);
+
+  /* Get SDRAM device VREF value */
+  if ((config->p_uim.mr6[0] & 0x40U) == 0x40U)
+  {
+    vref = 45000;
+  }
+  else
+  {
+    vref = 60000;
+  }
+  vref += ((config->p_uim.mr6[0] & 0x3FU) * 650);
+  printf("SDRAM device VREF = %d,%d %%VDDQ\n\r", vref / 1000, vref % 1000);
+}
+#endif /* STM32MP_DDR4_TYPE */
+
 __weak bool HAL_DDR_Interactive(__attribute__((unused))HAL_DDR_InteractStepTypeDef step)
 {
   return false;
@@ -4153,8 +4251,19 @@ start:
 
     ddr_delay_us(DDR_DELAY_1_US);
 
+    if (cid_filtering)
+    {
+      ddr_disable_cid_filtering();
+    }
+
     /* Disable IO retention */
     SET_BIT(PWR->CR11, PWR_CR11_DDRRETDIS);
+
+    if (cid_filtering)
+    {
+      ddr_enable_cid_filtering();
+    }
+
     ddr_delay_us(DDR_DELAY_1_US);
 
     CLEAR_BIT(RCC->DDRCAPBCFGR, RCC_DDRCAPBCFGR_DDRCAPBRST);
@@ -4642,7 +4751,7 @@ HAL_StatusTypeDef HAL_DDR_SaveRetentionData(void)
 /**
   * @}
   */
-#endif /* DDRC & DDRPHYC */
+#endif /* DDRC */
 #endif /* HAL_DDR_MODULE_ENABLED */
 /**
   * @}

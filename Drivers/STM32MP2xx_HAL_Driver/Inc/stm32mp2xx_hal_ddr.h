@@ -28,7 +28,7 @@ extern "C" {
 #include <stdbool.h>
 #include "stm32mp2xx_hal_def.h"
 
-#if defined (DDRC) && defined (DDRPHYC)
+#if defined (DDRC)
 
 /** @addtogroup STM32MP2xx_HAL_Driver
   * @{
@@ -448,6 +448,9 @@ void HAL_DDR_Edit_Param(HAL_DDR_ConfigTypeDef *config, char *name,
 void HAL_DDR_Edit_Impedance(HAL_DDR_ConfigTypeDef *config, char *name,
                         char *string);
 void HAL_DDR_Edit_Reg(char *name, char *string);
+#if STM32MP_DDR4_TYPE
+void HAL_DDR_Print_VREF(HAL_DDR_ConfigTypeDef *config);
+#endif /* STM32MP_DDR4_TYPE */
 #endif /* DDR_INTERACTIVE */
 
 /**
@@ -506,7 +509,7 @@ void HAL_DDR_Edit_Reg(char *name, char *string);
   * @}
   */
 
-#endif /* DDRC & DDRPHYC */
+#endif /* DDRC */
 
 #ifdef __cplusplus
 }

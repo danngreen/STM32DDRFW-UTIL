@@ -26,6 +26,15 @@ supported boards
 Update history
 ==============
 
+**V1.6.0 / 5-June-2026**
+
+This is the **V1.6.0 release of STM32DDRFW-UTIL**.
+
+-   Fix LPDDR4 16bits swizzle configuration.
+-   Add DMA stress test.
+-   Add DDR4 VREF print service.
+-   Rebase all elements with corrections.
+
 **V1.5.0 / 12-February-2026**
 
 This is the **V1.5.0 release of STM32DDRFW-UTIL**.

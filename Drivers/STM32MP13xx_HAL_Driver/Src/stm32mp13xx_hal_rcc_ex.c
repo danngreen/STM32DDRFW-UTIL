@@ -1880,7 +1880,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(const RCC_PeriphCLKInitTypeDef
 
     while ((PWR->CR1 & PWR_CR1_DBP) == 0U)
     {
-      if ((HAL_GetTick() - tickstart) > DBP_TIMEOUT_VALUE)
+      if ((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
       {
         ret = HAL_TIMEOUT;
       }

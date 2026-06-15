@@ -60,19 +60,19 @@ int32_t ddrphy_phyinit_calcmb(void)
   /* A few checks to make sure valid programming */
   if ((nad0 <= 0) || (nad1 < 0) || (userinputbasic.numdbyte <= 0))
   {
-    ERROR("%s numactivedbytedfi0, numactivedbytedfi0, NumByte out of range.\n", __func__);
+    ERROR("%s numactivedbytedfi0, numactivedbytedfi1, numdbyte out of range.\n", __func__);
     return -1;
   }
 
   if ((nad0 + nad1) > userinputbasic.numdbyte)
   {
-    ERROR("%s numactivedbytedfi0+numactivedbytedfi1 is larger than numdbyteDfi0\n", __func__);
+    ERROR("%s numactivedbytedfi0+numactivedbytedfi1 is larger than numdbyte\n", __func__);
     return -1;
   }
 
   if ((userinputbasic.dfi1exists == 0) && (nad1 != 0))
   {
-    ERROR("%s dfi1exists==0 but numdbyteDfi0 != 0\n", __func__);
+    ERROR("%s dfi1exists==0 but numdbytedfi1 != 0\n", __func__);
     return -1;
   }
 
