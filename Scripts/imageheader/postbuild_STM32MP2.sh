@@ -96,11 +96,11 @@ fi
 echo "cpu_name = $cpu_name"
 
 case "$(uname -s)" in
-  Linux)
+  Darwin)
     #line for python
     echo Postbuild with python script
     imgtool="${local_script_path}/Python3/Stm32ImageAddHeader.py"
-    cmd="python"
+    cmd="python3"
     ;;
   *)
     #line for window executable
@@ -202,7 +202,7 @@ if [ "${core}" == "CA35" ] ; then
 
   cp ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.bin ${elf_file_basename}_pad_el3lnch.bin
   
-  el3_launcher_size=$(stat -c%s ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.bin)
+  el3_launcher_size=$(/opt/homebrew/bin/gstat -c%s ${local_script_path}/EL3_Launcher/${el3_launcher_base_name}.bin)
   if [ "$header_version" == "2.3" ]; then
       el3_launcher_padding_size=$((el3_launcher_end_offset-el3_launcher_size-0x2640))
       no_el3_launcher_padding_size=$((el3_launcher_end_offset-0x2640))
