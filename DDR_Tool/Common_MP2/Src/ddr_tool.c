@@ -106,7 +106,7 @@ const subcmd_desc test[] = {
   {DDR_Test_WalkingOnes, "Test WalkingOnes", "[size] [loop] [addr]",
    "test Walking Zeroes pattern", 3},
   {HAL_DDR_Test_DMA_Stress, "Test DMA stress", "[size] [loop] [nb_channels]",
-   "test Walking Zeroes pattern", 3},
+   "test in DMA stress conditions", 3},
   {DDR_Test_TXComputeDelayMargins, "Computes TX DQS delay margins", "[none]",
    "computes TX DQS delay margins with present impedances", 0},
   {DDR_Test_RXComputeDelayMargins, "Computes RX DQS delay margins", "[none]",
@@ -120,6 +120,10 @@ const subcmd_desc test[] = {
 };
 
 const int test_nb = sizeof(test) / sizeof(test[0]);
+
+/* Following definitions may be updated if new tests are added */
+#define TEST_ARG_TX_DELAY_MARGINS "18\0"
+#define TEST_ARG_RX_DELAY_MARGINS "19\0"
 
 const char *step_str[] = {
     [STEP_DDR_RESET] = "DDR_RESET",
@@ -189,6 +193,10 @@ uint32_t DDR_Test_All(uint32_t loop, uint32_t size, uint32_t addr)
         if (test[i].fct == DDR_Test_NoiseBurst)
         {
           ret = test[i].fct(size, 0, addr);
+        }
+        else if (test[i].fct == HAL_DDR_Test_DMA_Stress)
+        {
+          ret = test[i].fct(size, 0, 12);
         }
         else
         {
@@ -766,7 +774,7 @@ static void do_subcmd(int argc, char *argv[], const subcmd_desc *array,
   }
 
   /*
-   * Test All command is also differently treated, regrding number of
+   * Test All command is also differently treated, regarding number of
    * arguments (0, 1, 2). So complete arguments to have a generic API including
    * number of valid arguments in third position.
    */
@@ -897,19 +905,19 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
       if (back_to_test == 1)
       {
         /*
-	 * Test in remote mode has been interrupted.
-	 * Last operation was a step change.
-	 * Now move back to this test.
-	 */
+         * Test in remote mode has been interrupted.
+         * Last operation was a step change.
+         * Now move back to this test.
+         */
         argc = 2;
         cmd = DDR_CMD_TEST;
         if (save_test_id == 1)
         {
-          argv[0] = "17\0";
+          argv[0] = TEST_ARG_TX_DELAY_MARGINS;
         }
         else if (save_test_id == 2)
         {
-          argv[0] = "18\0";
+          argv[0] = TEST_ARG_RX_DELAY_MARGINS;
         }
         else
         {
@@ -922,10 +930,10 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
       else
       {
         /*
-	 * Test in remote mode has been interrupted.
-	 * Execute the remote command.
-	 * If step change, then prepare to come back to test just after.
-	 */
+         * Test in remote mode has been interrupted.
+         * Execute the remote command.
+         * If step change, then prepare to come back to test just after.
+         */
         argc = remote_argc;
         cmd = remote_cmd;
         argv[0] = remote_argv0;
@@ -1022,9 +1030,9 @@ bool HAL_DDR_Interactive(HAL_DDR_InteractStepTypeDef step)
       if (!check_step(step, STEP_DDR_READY) && !silent_console)
       {
         /*
-	 * If a test is executed in remote mode, it is able to change steps and
-	 * come back just after.
-	 */
+         * If a test is executed in remote mode, it is able to change steps and
+         * come back just after.
+         */
         continue;
       }
       do_subcmd(argc, argv, test, test_nb);

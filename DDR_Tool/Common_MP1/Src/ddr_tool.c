@@ -65,6 +65,7 @@ typedef struct {
 /* Private define ------------------------------------------------------------*/
 #define CMD_MAX_LEN 1024
 #define CMD_MAX_ARG 255
+#define DDR_NAME_MAX_LEN 128
 
 static uint32_t DDR_Test_All(uint32_t loop, uint32_t size, uint32_t addr);
 
@@ -551,7 +552,7 @@ static bool pll2_set_rate(uint64_t pll2_clk_rate)
 static void do_info(HAL_DDR_InteractStepTypeDef step, int argc, char *argv[])
 {
   unsigned long value;
-  static char *ddr_name;
+  static char ddr_name[DDR_NAME_MAX_LEN];
   char *end_ptr;
 
   if (argc == 1)
@@ -579,18 +580,7 @@ static void do_info(HAL_DDR_InteractStepTypeDef step, int argc, char *argv[])
       name_len += strlen(argv[i]) + 1;
     }
 
-    if (ddr_name)
-    {
-      free(ddr_name);
-    }
-
-    ddr_name = malloc(name_len);
     static_ddr_config.info.name = ddr_name;
-    if (!ddr_name)
-    {
-      printf("alloc error, length %ld\n\r", name_len);
-      return;
-    }
 
     strcpy(ddr_name, argv[1]);
     for (i = 2; i < (argc - 1); i++)

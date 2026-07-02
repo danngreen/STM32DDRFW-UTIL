@@ -26,6 +26,12 @@ supported boards
 Update history
 ==============
 
+**V1.6.1 / 29-June-2026**
+
+This is the **V1.6.1 release of STM32DDRFW-UTIL**.
+
+-   Fix a regression on delay margins algorithm.
+
 **V1.6.0 / 5-June-2026**
 
 This is the **V1.6.0 release of STM32DDRFW-UTIL**.
