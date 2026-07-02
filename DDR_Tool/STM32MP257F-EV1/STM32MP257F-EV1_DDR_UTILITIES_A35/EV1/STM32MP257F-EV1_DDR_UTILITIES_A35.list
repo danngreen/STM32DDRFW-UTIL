@@ -971,9 +971,9 @@ Idx Name          Size      VMA               LMA               File off  Algn
                   ALLOC
 483 ._user_heap_stack 00000604  000000000e03551c  000000000e03551c  000334b0  2**0
                   ALLOC
-484 .debug_info   0009363b  0000000000000000  0000000000000000  000334b0  2**0
+484 .debug_info   0009363d  0000000000000000  0000000000000000  000334b0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-485 .debug_abbrev 0000f584  0000000000000000  0000000000000000  000c6aeb  2**0
+485 .debug_abbrev 0000f582  0000000000000000  0000000000000000  000c6aed  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 486 .debug_loclists 0003491d  0000000000000000  0000000000000000  000d606f  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -987,9 +987,9 @@ Idx Name          Size      VMA               LMA               File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 491 .debug_str    002b0e31  0000000000000000  0000000000000000  001c00df  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-492 .debug_line_str 000040cd  0000000000000000  0000000000000000  00470f10  2**0
+492 .debug_line_str 000040d2  0000000000000000  0000000000000000  00470f10  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
-493 .comment      00000044  0000000000000000  0000000000000000  00474fdd  2**0
+493 .comment      00000044  0000000000000000  0000000000000000  00474fe2  2**0
                   CONTENTS, READONLY
 494 .debug_frame  0000aae8  0000000000000000  0000000000000000  00475028  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -12786,7 +12786,7 @@ void ddrphy_phyinit_initstruct(void)
     mb_ddr_1d[myps].phyconfigoverride = 0x0U;
  e00970c:	7900441f 	strh	wzr, [x0, #34]
     mb_ddr_1d[myps].hdtctrl = hdtctrl;
- e009710:	12800005 	mov	w5, #0xffffffff            	// #-1
+ e009710:	528000a5 	mov	w5, #0x5                   	// #5
  e009714:	39006005 	strb	w5, [x0, #24]
     mb_ddr_1d[myps].msgmisc = msgmisc;
  e009718:	3900041f 	strb	wzr, [x0, #1]

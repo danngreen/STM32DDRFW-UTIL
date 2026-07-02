@@ -75,7 +75,7 @@ void ddrphy_phyinit_initstruct(void)
   uint8_t hdtctrl = 0xC8U;
 #endif /* STM32MP_LPDDR4_TYPE */
 #else /* USE_STM32MP257CXX_EMU */
-  uint8_t hdtctrl = 0xFFU;
+  uint8_t hdtctrl = 0x05U;//was: 0xFFU;
 #endif /* USE_STM32MP257CXX_EMU */
 
 #if STM32MP_DDR3_TYPE || STM32MP_DDR4_TYPE

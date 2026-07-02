@@ -21,7 +21,7 @@
 #define __STM32MP_UTIL_DDR_CONF_H
 
 
-#include "stm32mp2xx-ddr4-mp257-devboard-640MHz-A16DRIVETEST.h"
+#include "stm32mp2xx-ddr4-1x4Gbits-1x16bits-mp257-devboard-640MHz.h"
 
 /*
 #if (STM32MP_DDR4_TYPE && (DDR_SIZE_Gb == 32))
